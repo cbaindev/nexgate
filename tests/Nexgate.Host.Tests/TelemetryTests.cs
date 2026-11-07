@@ -11,9 +11,9 @@ public class TelemetryTests
         using var factory = new NexgateFactory { Organization = organization };
         using var client = factory.CreateClient();
 
-        await client.GetAsync("/api/v1/sample/ping");
+        await client.GetAsync(TestEndpoints.Ping);
 
-        var log = Assert.Single(factory.Logs.Entries, e => e.Message == "Ping recibido");
+        var log = Assert.Single(factory.Logs.Entries, e => e.Message == TestEndpoints.PingLogMessage);
         Assert.Equal(organization.ToString(), log.Scope["OrganizationId"]);
     }
 
@@ -23,10 +23,10 @@ public class TelemetryTests
         using var factory = new NexgateFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/v1/sample/ping");
+        var response = await client.GetAsync(TestEndpoints.Ping);
 
         Assert.True(response.IsSuccessStatusCode);
-        var log = Assert.Single(factory.Logs.Entries, e => e.Message == "Ping recibido");
+        var log = Assert.Single(factory.Logs.Entries, e => e.Message == TestEndpoints.PingLogMessage);
         Assert.False(log.Scope.ContainsKey("OrganizationId"));
     }
 
@@ -46,11 +46,12 @@ public class TelemetryTests
     [Fact]
     public async Task Personal_data_sent_in_a_request_is_not_written_to_the_logs()
     {
-        using var factory = new NexgateFactory { Organization = Guid.NewGuid() };
-        using var client = factory.CreateClient();
+        using var factory = new NexgateFactory();
+        using var client = factory.CreateClientFor(await factory.CreateOrganizationAsync());
 
-        await client.PostAsJsonAsync("/api/v1/sample/greet", new { name = "Juan Perez 30123456" });
-        await client.PostAsJsonAsync("/api/v1/sample/greet", new { name = new string('x', 80) + "30123456" });
+        await client.PostAsJsonAsync("/api/v1/sites", new { name = "Casa de Juan Perez 30123456", type = "house", timeZone = "UTC" });
+        await client.PostAsJsonAsync("/api/v1/sites", new { name = new string('x', 250) + "30123456", type = "house", timeZone = "UTC" });
+        await client.GetAsync("/api/v1/sites");
 
         Assert.NotEmpty(factory.Logs.Entries);
         Assert.DoesNotContain(factory.Logs.Entries, e => e.AllText.Contains("30123456") || e.AllText.Contains("Juan"));

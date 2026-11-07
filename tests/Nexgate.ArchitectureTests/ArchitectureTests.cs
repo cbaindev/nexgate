@@ -11,10 +11,10 @@ public class ArchitectureTests
         Assert.Contains(projects, p => p.Name == "Nexgate.Host");
         Assert.Contains(projects, p => p.Name == "Nexgate.Workers");
         Assert.Contains(projects, p => p.Name == "Nexgate.BuildingBlocks");
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Contracts" });
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Domain" });
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Application" });
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Infrastructure" });
+        Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Contracts" });
+        Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Domain" });
+        Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Application" });
+        Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Infrastructure" });
     }
 
     [Fact]

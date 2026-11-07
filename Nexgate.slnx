@@ -7,11 +7,11 @@
     <Project Path="src/BuildingBlocks/Nexgate.BuildingBlocks.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
-  <Folder Name="/src/Modules/Sample/">
-    <Project Path="src/Modules/Sample/Sample.Application/Sample.Application.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Contracts/Sample.Contracts.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Domain/Sample.Domain.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Infrastructure/Sample.Infrastructure.csproj" />
+  <Folder Name="/src/Modules/Tenancy/">
+    <Project Path="src/Modules/Tenancy/Tenancy.Application/Tenancy.Application.csproj" />
+    <Project Path="src/Modules/Tenancy/Tenancy.Contracts/Tenancy.Contracts.csproj" />
+    <Project Path="src/Modules/Tenancy/Tenancy.Domain/Tenancy.Domain.csproj" />
+    <Project Path="src/Modules/Tenancy/Tenancy.Infrastructure/Tenancy.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Nexgate.ArchitectureTests/Nexgate.ArchitectureTests.csproj" />

@@ -5,9 +5,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sample.Contracts\Sample.Contracts.csproj" />
-    <ProjectReference Include="..\Sample.Application\Sample.Application.csproj" />
-    <ProjectReference Include="..\Sample.Domain\Sample.Domain.csproj" />
+    <ProjectReference Include="..\Tenancy.Contracts\Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\Tenancy.Application\Tenancy.Application.csproj" />
+    <ProjectReference Include="..\Tenancy.Domain\Tenancy.Domain.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Nexgate.BuildingBlocks.csproj" />
   </ItemGroup>
 

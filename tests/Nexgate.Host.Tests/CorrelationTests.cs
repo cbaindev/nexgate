@@ -4,7 +4,7 @@ public class CorrelationTests
 {
     private static HttpRequestMessage Ping(string? correlationId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/sample/ping");
+        var request = new HttpRequestMessage(HttpMethod.Get, TestEndpoints.Ping);
         if (correlationId is not null)
         {
             request.Headers.TryAddWithoutValidation("X-Correlation-Id", correlationId);
@@ -22,7 +22,7 @@ public class CorrelationTests
         var response = await client.SendAsync(Ping("cliente-abc_123.xyz"));
 
         Assert.Equal("cliente-abc_123.xyz", Assert.Single(response.Headers.GetValues("X-Correlation-Id")));
-        var log = Assert.Single(factory.Logs.Entries, e => e.Message == "Ping recibido");
+        var log = Assert.Single(factory.Logs.Entries, e => e.Message == TestEndpoints.PingLogMessage);
         Assert.Equal("cliente-abc_123.xyz", log.Scope["CorrelationId"]);
     }
 
@@ -36,7 +36,7 @@ public class CorrelationTests
 
         var generated = Assert.Single(response.Headers.GetValues("X-Correlation-Id"));
         Assert.Matches("^[0-9a-f]{32}$", generated);
-        var log = Assert.Single(factory.Logs.Entries, e => e.Message == "Ping recibido");
+        var log = Assert.Single(factory.Logs.Entries, e => e.Message == TestEndpoints.PingLogMessage);
         Assert.Equal(generated, log.Scope["CorrelationId"]);
     }
 

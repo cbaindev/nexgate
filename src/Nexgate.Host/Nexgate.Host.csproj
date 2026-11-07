@@ -2,7 +2,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\Nexgate.BuildingBlocks.csproj" />
-    <ProjectReference Include="..\Modules\Sample\Sample.Infrastructure\Sample.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Tenancy\Tenancy.Infrastructure\Tenancy.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

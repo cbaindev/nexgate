@@ -66,19 +66,25 @@ Los módulos solo se referencian por `*.Contracts`.
 
 ## Multitenancy
 
-- Toda tabla de negocio lleva `organizacion_id`.
-- **Row-Level Security** en PostgreSQL como defensa principal. El rol de la aplicación **no** es propietario de las tablas ni superusuario.
-- La aplicación fija el tenant en cada transacción con `set_config('app.org_id', ..., true)` (variable local a la transacción, compatible con pool de conexiones), mediante un interceptor de EF Core.
-- Además, **filtros globales de EF Core** como segunda barrera.
+- Toda tabla de negocio lleva `organization_id` (los nombres de tablas y columnas van en inglés, Q-04).
+- **Row-Level Security** en PostgreSQL como defensa principal. Dos roles: `nexgate_owner` corre las migraciones y es dueño de las tablas; `nexgate_app` es el de la aplicación, sin propiedad, sin `BYPASSRLS` y sin acceso al historial de migraciones. La API nunca migra al arrancar (`dotnet run --project src/Nexgate.Host -- migrate`).
+- Un interceptor de EF Core fija la organización activa en la sesión cada vez que abre una conexión (`set_config('app.org_id', ..., false)`), y la deja vacía si no hay organización activa. Npgsql reinicia el estado de la sesión al devolver la conexión al pool, así que una conexión reutilizada no conserva la organización anterior.
+- Sin organización activa no se ve nada: `public.nexgate_current_org()` devuelve NULL y ninguna fila cumple la política (falla cerrado).
+- Además, **filtros globales de EF Core** como segunda barrera: el `DbContext` base filtra las entidades marcadas como de una organización, les asigna la organización activa al crearlas y rechaza cualquier cambio de organización.
+- Una prueba de catálogo falla si alguna tabla de negocio no tiene RLS habilitado, forzado y con política.
 
 ```sql
-ALTER TABLE access.otorgamiento ENABLE ROW LEVEL SECURITY;
-ALTER TABLE access.otorgamiento FORCE ROW LEVEL SECURITY;
+ALTER TABLE access.grant ENABLE ROW LEVEL SECURITY;
+ALTER TABLE access.grant FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY aislamiento_tenant ON access.otorgamiento
-  USING (organizacion_id = current_setting('app.org_id', true)::uuid);
+CREATE POLICY tenant_isolation ON access.grant
+  USING (organization_id = public.nexgate_current_org())
+  WITH CHECK (organization_id = public.nexgate_current_org());
 ```
 
+Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, tabla)` y `GrantAppAccess(schema)`.
+
+- La organización activa sale del claim `org_id` del usuario autenticado. Hasta que exista identidad, hay un mecanismo de desarrollo (encabezado `X-Nexgate-Organization`, `Tenancy:DevelopmentAccess:Enabled`) que está apagado por defecto y que impide arrancar fuera de `Development`.
 - El **padrón** (módulo People) es la única excepción: vive fuera de RLS y solo se accede por un servicio con API estrecha (`ResolverSujeto(documento) → sujetoId`), con un rol de base de datos propio.
 - El acceso por **sitio** y por **espacio** se resuelve en la capa de aplicación con las asignaciones de rol.
 

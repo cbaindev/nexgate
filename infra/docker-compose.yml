@@ -10,10 +10,14 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-nexgate}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexgate_dev}
       POSTGRES_DB: ${POSTGRES_DB:-nexgate}
+      NEXGATE_OWNER_PASSWORD: ${NEXGATE_OWNER_PASSWORD:-nexgate_owner_dev}
+      NEXGATE_APP_PASSWORD: ${NEXGATE_APP_PASSWORD:-nexgate_app_dev}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Roles de la aplicación; solo corre al crear el volumen (ver README).
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexgate} -d ${POSTGRES_DB:-nexgate}"]
       interval: 5s

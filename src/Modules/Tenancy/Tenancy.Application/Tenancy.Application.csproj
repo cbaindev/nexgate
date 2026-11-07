@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tenancy.Contracts\Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\Tenancy.Domain\Tenancy.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NodaTime" Version="3.3.7" />
+  </ItemGroup>
+
+</Project>

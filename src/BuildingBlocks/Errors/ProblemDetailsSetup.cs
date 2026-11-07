@@ -19,13 +19,15 @@ public static class ProblemDetailsSetup
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentOrganization, HttpContextCurrentOrganization>();
+        services.AddNexgateTenancy();
 
         services.AddProblemDetails(options =>
         {
             options.CustomizeProblemDetails = context =>
             {
                 var problem = context.ProblemDetails;
-                problem.Extensions["code"] = ErrorCodeFor(problem);
+                // Un endpoint puede fijar un código más específico; si no, se deriva del estado.
+                problem.Extensions.TryAdd("code", ErrorCodeFor(problem));
                 problem.Extensions["correlationId"] = context.HttpContext.GetCorrelationId();
             };
         });
@@ -33,12 +35,16 @@ public static class ProblemDetailsSetup
         return services;
     }
 
-    /// <summary>Orden del pipeline: correlación → manejo de errores → páginas de estado → enriquecimiento de telemetría.</summary>
+    /// <summary>
+    /// Orden del pipeline: correlación → manejo de errores → páginas de estado → organización activa →
+    /// enriquecimiento de telemetría. La autenticación (cuando exista) va antes de la organización activa.
+    /// </summary>
     public static IApplicationBuilder UseNexgatePipeline(this IApplicationBuilder app)
     {
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseExceptionHandler();
         app.UseStatusCodePages();
+        app.UseMiddleware<OrganizationResolutionMiddleware>();
         app.UseMiddleware<Telemetry.TelemetryEnrichmentMiddleware>();
         return app;
     }
