@@ -1,0 +1,68 @@
+schema: spec-driven
+
+context: |
+  Language: es
+  All artifacts must be written in es.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  # Proyecto
+  Nexgate es una plataforma multitenant de control de acceso físico. Primer alcance: edificios
+  de Córdoba (Argentina). El modelo es genérico para countries, barrios cerrados, empresas y casas.
+  La documentación de diseño vive en docs/ (01 a 08). Las decisiones tienen ID (D-01...) en
+  docs/01-decisiones.md: citarlas en proposals y designs cuando corresponda. Los specs describen
+  comportamiento observable; las decisiones de implementación van en design.md.
+
+  # Stack
+  - Backend: .NET (LTS vigente) como monolito modular. Un schema de PostgreSQL por módulo, una sola base.
+  - Base de datos: PostgreSQL con Row-Level Security por organización.
+  - Frontend: React + TypeScript (Vite, TanStack Query). Un solo panel con vistas por rol, PWA para residentes.
+  - Dispositivos: ESP32 con firmware propio, MQTT sobre TLS, política compilada y firmada, funcionamiento offline.
+  - Módulos: Tenancy, Identity, People, Spaces, Occupancy, Access, Devices, Events, Notifications, Admin.
+
+  # Modelo de dominio (resumen)
+  - Organización (tenant raíz) → Sitio → Espacio (árbol) → Punto de acceso → Dispositivo.
+  - Persona (padrón global, cifrado) vs Sujeto (representación local por sitio). Los datos de negocio
+    solo referencian SujetoId, nunca el documento.
+  - Unidad ↔ Espacio por Ocupación (rol: propietario, inquilino, residente). Persona/Sujeto ↔ Unidad por Membresía.
+  - Todo permiso es un Otorgamiento (Sujeto → Destino → Horario → Vigencia → Efecto → Origen). Gana siempre la denegación.
+
+  # Convenciones
+  - Código, identificadores, nombres de tablas y de endpoints en inglés (propuesto, ver Q-04). Interfaz y documentación en español.
+  - Todo dato de negocio lleva organizacion_id y está protegido por RLS. Excepción única: el padrón del módulo People.
+  - Los módulos solo se referencian por sus proyectos *.Contracts y se comunican por eventos de integración (outbox).
+  - Evaluador de acceso: el mismo algoritmo corre en backend (C#) y firmware; se prueban con vectores de prueba compartidos.
+  - Nunca restringir por morosidad la puerta de la unidad ni el acceso principal al sitio.
+  - La puerta siempre debe poder abrirse desde adentro. Cada punto de acceso define su modo de fallo.
+
+  # Privacidad
+  - Cumplir Ley 25.326. Documento y datos sensibles cifrados; búsquedas por HMAC con pepper.
+  - Ningún tenant puede consultar el padrón ni enterarse de qué otras organizaciones tienen a una persona.
+  - El administrador no ve datos personales de invitados. Retención configurable con anonimización.
+
+rules:
+  proposal:
+    - Citar los IDs de decisión (D-xx) de docs/01-decisiones.md que la propuesta implementa o modifica
+    - Indicar explícitamente qué queda fuera de alcance
+    - Indicar el impacto en seguridad, privacidad y multitenancy (aislamiento por organización)
+  specs:
+    - Cada requirement usa SHALL o MUST y tiene al menos un scenario con WHEN y THEN
+    - Describir comportamiento observable, sin nombres de clases ni de librerías
+    - Todo requirement sobre datos de negocio debe contemplar el aislamiento entre organizaciones
+    - Incluir escenarios de error y de funcionamiento sin conexión cuando involucren dispositivos
+  design:
+    - Explicar la alternativa descartada de cada decisión técnica relevante
+    - Cuando se agregue una tabla, indicar su schema, su organizacion_id y su política RLS
+    - Indicar cómo se prueba (unitarias, integración con PostgreSQL real, vectores compartidos con firmware)
+  tasks:
+    - Cada tarea indica cómo se verifica (test, comando o comportamiento observable)
+    - Agrupar tareas en pasos de a lo sumo una sesión de trabajo
+    - Cada grupo incluye sus propias pruebas y documentación
+
+operations:
+  apply:
+    guidance:
+      - Implementar solo lo que está en tasks.md; si aparece trabajo nuevo, actualizar los artefactos antes de seguir
+      - Ejecutar los tests del grupo antes de marcar sus tareas como completas
+  archive:
+    guidance:
+      - Al archivar, verificar que docs/ sigue siendo coherente con los specs y actualizar el documento afectado
