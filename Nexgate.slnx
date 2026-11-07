@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nexgate.Host/Nexgate.Host.csproj" />
+    <Project Path="src/Nexgate.Workers/Nexgate.Workers.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/Nexgate.BuildingBlocks.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Sample/">
+    <Project Path="src/Modules/Sample/Sample.Application/Sample.Application.csproj" />
+    <Project Path="src/Modules/Sample/Sample.Contracts/Sample.Contracts.csproj" />
+    <Project Path="src/Modules/Sample/Sample.Domain/Sample.Domain.csproj" />
+    <Project Path="src/Modules/Sample/Sample.Infrastructure/Sample.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nexgate.ArchitectureTests/Nexgate.ArchitectureTests.csproj" />
+    <Project Path="tests/Nexgate.Host.Tests/Nexgate.Host.Tests.csproj" />
+  </Folder>
+</Solution>

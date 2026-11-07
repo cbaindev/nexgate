@@ -1,0 +1,38 @@
+# Entorno de desarrollo local: PostgreSQL y un broker MQTT.
+# Uso:  docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d
+# (o copiar infra/.env.example a infra/.env y usar --env-file infra/.env)
+name: nexgate
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexgate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexgate_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-nexgate}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexgate} -d ${POSTGRES_DB:-nexgate}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3 -i healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  mosquitto-data:
