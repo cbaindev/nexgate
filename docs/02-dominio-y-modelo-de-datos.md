@@ -58,12 +58,18 @@ Un otorgamiento al **Hall** cubre solo el portón y la puerta del hall, no los p
 
 Cada módulo tiene su propio **schema** de PostgreSQL. Todas las tablas de los módulos con datos de negocio llevan `organizacion_id` (y `sitio_id` cuando corresponde), con RLS por tenant.
 
-### Tenancy
+Los nombres de tablas y columnas de este documento están en español como referencia conceptual. En la base se usan en inglés, según la regla de identificadores del proyecto: `organizacion_id` es `organization_id`, `sitio_id` es `site_id`, y así con el resto. Los módulos ya implementados muestran sus nombres reales.
+
+### Tenancy (implementado)
+
+Schema `tenancy`.
 
 | Tabla | Campos principales |
 |---|---|
-| `organizacion` | id, nombre, estado, plan |
-| `sitio` | id, organizacion_id, tipo (edificio, country, empresa, casa), nombre, zona_horaria, configuracion (jsonb) |
+| `organization` | id, name, status (active), created_at. El plan comercial queda para un cambio posterior. |
+| `site` | id, organization_id, type (building, gated_community, company, house), name (único por organización sin distinguir mayúsculas), time_zone (IANA), configuration (jsonb), created_at, updated_at |
+
+`site` tiene la política RLS estándar por `organization_id`. `organization` tiene políticas propias: se lee y modifica solo la organización activa, y solo se crea en una operación de plataforma. Ver `openspec/specs/tenant-isolation`.
 
 ### Identity
 
