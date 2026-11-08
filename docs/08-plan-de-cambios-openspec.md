@@ -35,6 +35,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | 1 | `add-solution-foundation` (**implementado y archivado**) | `platform-api` | D-27, D-28, D-30 |
 | 2 | `add-tenancy-and-isolation` (**implementado y archivado**) | `tenancy/organizations-and-sites`, `tenancy/tenant-isolation` | D-02, D-28 |
 | 3 | `add-identity-and-roles` | `identity/authentication`, `identity/role-scopes` | D-03, D-04, D-05 |
+| 3b | `add-openapi-contract` (agregado: contrato OpenAPI y Swagger UI) | `platform-api` | D-29, D-32 |
 | 4 | `add-spaces-and-access-points` | `spaces/space-tree`, `spaces/access-points` | D-06 |
 | 5 | `add-access-evaluator` | `access/grants`, `access/access-evaluation`, `access/policy-compilation` (con vectores de prueba compartidos con el firmware) | D-13 |
 | 6 | `add-device-sync-protocol` | `devices/device-provisioning`, `devices/policy-sync`, `events/event-ingestion` | D-30 |

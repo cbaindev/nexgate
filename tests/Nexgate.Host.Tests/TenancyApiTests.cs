@@ -21,18 +21,25 @@ public class TenancyApiTests
     // --- Organizaciones ---
 
     [Fact]
-    public async Task Platform_operator_creates_an_active_organization()
+    public async Task Platform_operator_creates_an_active_organization_with_an_administrator_invitation()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = await factory.CreateOperatorClientAsync();
 
-        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name = "  Consorcio Norte  " });
+        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations",
+            new { name = "  Consorcio Norte  ", administratorEmail = "Admin.Norte@Example.com" });
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotEqual(Guid.Empty, body.GetProperty("id").GetGuid());
         Assert.Equal("Consorcio Norte", body.GetProperty("name").GetString());
         Assert.Equal("active", body.GetProperty("status").GetString());
+        var invitation = body.GetProperty("administratorInvitation");
+        Assert.Equal("admin.norte@example.com", invitation.GetProperty("email").GetString());
+        Assert.Equal("administrator", invitation.GetProperty("role").GetString());
+        Assert.Equal("organization", invitation.GetProperty("scopeType").GetString());
+        Assert.False(string.IsNullOrEmpty(invitation.GetProperty("token").GetString()));
+        Assert.True(invitation.GetProperty("expiresAt").GetDateTimeOffset() > DateTimeOffset.UtcNow);
     }
 
     [Theory]
@@ -42,9 +49,9 @@ public class TenancyApiTests
     public async Task Organization_with_an_invalid_name_is_rejected(string? name)
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = await factory.CreateOperatorClientAsync();
 
-        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name });
+        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name, administratorEmail = NexgateFactory.NewEmail() });
         var problem = await ProblemOf(response);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -55,23 +62,60 @@ public class TenancyApiTests
     public async Task Organization_name_longer_than_200_characters_is_rejected()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = await factory.CreateOperatorClientAsync();
 
-        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name = new string('a', 201) });
+        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations",
+            new { name = new string('a', 201), administratorEmail = NexgateFactory.NewEmail() });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.True((await ProblemOf(response)).GetProperty("errors").TryGetProperty("Name", out _));
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("sin-arroba")]
+    [InlineData("con espacio@example.com")]
+    public async Task Organization_with_an_invalid_administrator_email_is_rejected_and_not_created(string? email)
+    {
+        using var factory = new NexgateFactory();
+        using var client = await factory.CreateOperatorClientAsync();
+        var name = $"Sin admin {Guid.NewGuid():N}";
+
+        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name, administratorEmail = email });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.True((await ProblemOf(response)).GetProperty("errors").TryGetProperty("AdministratorEmail", out _));
+        await using var connection = new Npgsql.NpgsqlConnection((await TestDatabase.GetAsync()).OwnerConnectionString);
+        await connection.OpenAsync();
+        await using var count = new Npgsql.NpgsqlCommand("SELECT count(*) FROM tenancy.organization WHERE name = @name", connection);
+        count.Parameters.AddWithValue("name", name);
+        Assert.Equal(0L, await count.ExecuteScalarAsync());
+    }
+
     [Fact]
     public async Task Without_platform_access_organizations_cannot_be_created()
     {
-        using var factory = new NexgateFactory { DevelopmentAccess = false };
+        using var factory = new NexgateFactory();
+        using var admin = factory.CreateClientFor(await factory.CreateOrganizationAsync());
+
+        var response = await admin.PostAsJsonAsync("/api/v1/platform/organizations",
+            new { name = "Intruso", administratorEmail = NexgateFactory.NewEmail() });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("permission_denied", (await ProblemOf(response)).GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task Anonymous_callers_cannot_create_organizations()
+    {
+        using var factory = new NexgateFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations", new { name = "Intruso" });
+        var response = await client.PostAsJsonAsync("/api/v1/platform/organizations",
+            new { name = "Intruso", administratorEmail = NexgateFactory.NewEmail() });
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("authentication_required", (await ProblemOf(response)).GetProperty("code").GetString());
     }
 
     [Fact]
@@ -93,8 +137,23 @@ public class TenancyApiTests
     public async Task Active_organization_that_does_not_exist_responds_404()
     {
         using var factory = new NexgateFactory();
-        await factory.CreateOrganizationAsync();
-        using var client = factory.CreateClientFor(Guid.NewGuid());
+        var organization = await factory.CreateOrganizationAsync();
+        using var client = factory.CreateClientFor(organization);
+
+        // La membresía sigue, pero la organización ya no es visible (se borra como owner, fuera de la API).
+        await using (var connection = new Npgsql.NpgsqlConnection((await TestDatabase.GetAsync()).OwnerConnectionString))
+        {
+            await connection.OpenAsync();
+            // FORCE aplica RLS también al owner: se suspende solo dentro de esta transacción.
+            await using var transaction = await connection.BeginTransactionAsync();
+            await using var delete = new Npgsql.NpgsqlCommand(
+                "ALTER TABLE tenancy.organization NO FORCE ROW LEVEL SECURITY; " +
+                "DELETE FROM tenancy.organization WHERE id = @id; " +
+                "ALTER TABLE tenancy.organization FORCE ROW LEVEL SECURITY;", connection, transaction);
+            delete.Parameters.AddWithValue("id", organization);
+            await delete.ExecuteNonQueryAsync();
+            await transaction.CommitAsync();
+        }
 
         var response = await client.GetAsync("/api/v1/organization");
 
@@ -296,7 +355,8 @@ public class TenancyApiTests
     public async Task Organization_operations_without_an_active_organization_respond_403(string method, string path)
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        // El operador de plataforma no tiene membresías: su token no tiene organización activa.
+        using var client = await factory.CreateOperatorClientAsync();
 
         var request = new HttpRequestMessage(new HttpMethod(method), path);
         if (method is "POST" or "PUT")
@@ -309,5 +369,26 @@ public class TenancyApiTests
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal("organization_context_required", problem.GetProperty("code").GetString());
+    }
+
+    [Theory]
+    [InlineData("GET", "/api/v1/sites")]
+    [InlineData("POST", "/api/v1/sites")]
+    [InlineData("GET", "/api/v1/organization")]
+    public async Task Organization_operations_without_a_token_respond_401(string method, string path)
+    {
+        using var factory = new NexgateFactory();
+        using var client = factory.CreateClient();
+
+        var request = new HttpRequestMessage(new HttpMethod(method), path);
+        if (method is "POST")
+        {
+            request.Content = JsonContent.Create(new { name = "X", type = "house", timeZone = Cordoba });
+        }
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("authentication_required", (await ProblemOf(response)).GetProperty("code").GetString());
     }
 }

@@ -88,8 +88,8 @@ public sealed class OrganizationService(IOrganizationStore store, TimeProvider c
 
 public sealed class SiteService(ISiteStore store, TimeProvider clock)
 {
-    public async Task<IReadOnlyList<SiteDto>> ListAsync(CancellationToken cancellationToken) =>
-        (await store.ListAsync(cancellationToken)).Select(ToDto).ToList();
+    public async Task<IReadOnlyList<SiteDto>> ListAsync(IReadOnlyCollection<Guid>? onlySites, CancellationToken cancellationToken) =>
+        (await store.ListAsync(onlySites, cancellationToken)).Select(ToDto).ToList();
 
     public async Task<TenancyResult<SiteDto>> GetAsync(Guid id, CancellationToken cancellationToken) =>
         await store.FindAsync(id, cancellationToken) is { } site

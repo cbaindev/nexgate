@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Nexgate.BuildingBlocks.OpenApi;
 
 namespace Nexgate.BuildingBlocks.Validation;
 
@@ -42,5 +43,6 @@ public static class ValidationExtensions
                 }
             });
             return Results.Empty;
-        });
+        })
+        .Problems(StatusCodes.Status400BadRequest);
 }

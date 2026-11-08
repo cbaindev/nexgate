@@ -7,6 +7,12 @@
     <Project Path="src/BuildingBlocks/Nexgate.BuildingBlocks.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Identity.Application/Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/Identity.Contracts/Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/Identity.Domain/Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Tenancy/">
     <Project Path="src/Modules/Tenancy/Tenancy.Application/Tenancy.Application.csproj" />
     <Project Path="src/Modules/Tenancy/Tenancy.Contracts/Tenancy.Contracts.csproj" />

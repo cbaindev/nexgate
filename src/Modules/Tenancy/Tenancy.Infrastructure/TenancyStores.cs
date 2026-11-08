@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nexgate.BuildingBlocks.Persistence;
 using Nexgate.Modules.Tenancy.Application;
+using Nexgate.Modules.Tenancy.Contracts;
 using Nexgate.Modules.Tenancy.Domain;
 using Npgsql;
 
@@ -23,10 +24,33 @@ internal sealed class OrganizationStore(TenancyDbContext db) : IOrganizationStor
         db.Organizations.AsNoTracking().SingleOrDefaultAsync(cancellationToken);
 }
 
+/// <summary>Organización activa para otros módulos (pasa por RLS).</summary>
+internal sealed class OrganizationDirectory(IOrganizationStore store) : IOrganizationDirectory
+{
+    public async Task<OrganizationDto?> GetActiveOrganizationAsync(CancellationToken cancellationToken) =>
+        await store.FindActiveAsync(cancellationToken) is { } organization ? OrganizationService.ToDto(organization) : null;
+}
+
+/// <summary>Sitios de la organización activa para otros módulos (pasa por RLS).</summary>
+internal sealed class SiteDirectory(TenancyDbContext db) : ISiteDirectory
+{
+    public Task<bool> ExistsAsync(Guid siteId, CancellationToken cancellationToken) =>
+        db.Sites.AnyAsync(s => s.Id == siteId, cancellationToken);
+}
+
 internal sealed class SiteStore(TenancyDbContext db) : ISiteStore
 {
-    public async Task<IReadOnlyList<Site>> ListAsync(CancellationToken cancellationToken) =>
-        await db.Sites.AsNoTracking().OrderBy(s => s.Name).ThenBy(s => s.Id).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<Site>> ListAsync(IReadOnlyCollection<Guid>? onlySites, CancellationToken cancellationToken)
+    {
+        var query = db.Sites.AsNoTracking();
+        if (onlySites is not null)
+        {
+            var ids = onlySites.ToList();
+            query = query.Where(s => ids.Contains(s.Id));
+        }
+
+        return await query.OrderBy(s => s.Name).ThenBy(s => s.Id).ToListAsync(cancellationToken);
+    }
 
     public Task<Site?> FindAsync(Guid id, CancellationToken cancellationToken) =>
         db.Sites.SingleOrDefaultAsync(s => s.Id == id, cancellationToken);

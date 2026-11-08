@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\Nexgate.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\Modules\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Tenancy\Tenancy.Infrastructure\Tenancy.Infrastructure.csproj" />
   </ItemGroup>
 

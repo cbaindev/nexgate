@@ -15,7 +15,8 @@ public interface IOrganizationStore
 /// <summary>Persistencia de sitios. Toda lectura y escritura está acotada a la organización activa.</summary>
 public interface ISiteStore
 {
-    Task<IReadOnlyList<Site>> ListAsync(CancellationToken cancellationToken);
+    /// <summary>Sitios de la organización activa; con <paramref name="onlySites"/>, solo esos (alcance de sitio).</summary>
+    Task<IReadOnlyList<Site>> ListAsync(IReadOnlyCollection<Guid>? onlySites, CancellationToken cancellationToken);
 
     Task<Site?> FindAsync(Guid id, CancellationToken cancellationToken);
 

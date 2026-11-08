@@ -4,7 +4,7 @@ Plataforma **multitenant** de **control de acceso físico**. Primer alcance: edi
 
 > "Nexgate" es el nombre de trabajo (coincide con la carpeta del proyecto).
 
-**Estado:** Fase 1, prototipo técnico. Implementados: base de la solución (`add-solution-foundation`) y tenancy con aislamiento por organización (`add-tenancy-and-isolation`).
+**Estado:** Fase 1, prototipo técnico. Implementados: base de la solución (`add-solution-foundation`), tenancy con aislamiento por organización (`add-tenancy-and-isolation`) e identidad con roles por alcance (`add-identity-and-roles`).
 
 ## Idea en una frase
 
@@ -60,15 +60,53 @@ La cadena `ConnectionStrings:Default` usa `nexgate_app` y `ConnectionStrings:Mig
 El script solo corre al crear el volumen: si ya tenías el volumen de una versión anterior, recrealo con
 `docker compose --env-file infra/.env.example -f infra/docker-compose.yml down -v` y volvé a levantarlo.
 
-**Organización activa en desarrollo.** Hasta que exista la autenticación, la organización activa se indica con el
-encabezado `X-Nexgate-Organization`, y eso solo funciona si se habilita a mano (la aplicación no arranca si se lo
-habilita fuera de `Development`):
+**Primer uso: operador, organización y administrador.** Toda la API de negocio exige un token. La organización
+activa sale del token y solo vale si el usuario es miembro; ningún encabezado la puede fijar.
 
 ```bash
-Tenancy__DevelopmentAccess__Enabled=true dotnet run --project src/Nexgate.Host
-curl -X POST http://localhost:5095/api/v1/platform/organizations -H "Content-Type: application/json" -d '{"name":"Consorcio Demo"}'
-curl http://localhost:5095/api/v1/sites -H "X-Nexgate-Organization: <id de la organización>"
+# 1. Crear el operador de plataforma (la contraseña nunca va en los argumentos)
+NEXGATE_OPERATOR_PASSWORD='<contraseña de 12 o más>' dotnet run --project src/Nexgate.Host -- create-platform-operator --email operador@ejemplo.com
+
+# 2. Iniciar sesión como operador y crear una organización con su primer administrador
+curl -X POST http://localhost:5095/api/v1/auth/token -H "Content-Type: application/json" \
+  -d '{"email":"operador@ejemplo.com","password":"<contraseña>"}'
+curl -X POST http://localhost:5095/api/v1/platform/organizations -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <accessToken del operador>" -d '{"name":"Consorcio Demo","administratorEmail":"admin@ejemplo.com"}'
+
+# 3. Aceptar la invitación (el token viene en administratorInvitation.token) e iniciar sesión como administrador
+curl -X POST http://localhost:5095/api/v1/invitations/accept -H "Content-Type: application/json" \
+  -d '{"token":"<token de la invitación>","password":"<contraseña del administrador>"}'
+curl -X POST http://localhost:5095/api/v1/auth/token -H "Content-Type: application/json" \
+  -d '{"email":"admin@ejemplo.com","password":"<contraseña del administrador>"}'
+
+# 4. Usar la API con ese token
+curl http://localhost:5095/api/v1/sites -H "Authorization: Bearer <accessToken del administrador>"
 ```
+
+El administrador suma usuarios con `POST /api/v1/invitations` (rol `administrator`, `guard`, `resident` o
+`employee`, con alcance `organization` o `site`). Mientras no exista el envío de correos, el token de la invitación se
+le devuelve a quien invita para que lo haga llegar. `GET /api/v1/me/permissions` dice qué puede hacer cada usuario.
+
+**Swagger UI y contrato OpenAPI.** En `Development`, la referencia interactiva está en
+`http://localhost:5095/swagger` y el documento en `/openapi/v1.json` (fuera de `Development` responden 404). Para probar
+un endpoint protegido: ejecutar `signIn` (`POST /api/v1/auth/token`), copiar el `accessToken`, pegarlo en **Authorize** y
+llamar la operación; responde igual que a cualquier cliente con ese token. El token no se guarda al recargar la página.
+
+El documento es el contrato del que el frontend genera su cliente (D-32) y está versionado en
+`api/nexgate-v1.openapi.json`. Si un cambio en la API lo modifica, `dotnet test` falla hasta regenerarlo:
+
+```bash
+NEXGATE_UPDATE_OPENAPI=1 dotnet test tests/Nexgate.Host.Tests --filter OpenApiContract
+```
+
+El diff del archivo se revisa con el cambio. Cada endpoint declara nombre de operación (`WithName`), resumen en español,
+etiqueta, respuesta de éxito (`Produces`) y errores (`Problems`); los filtros de permisos y de validación declaran solos
+sus 400, 401 y 403. Una respuesta que las pruebas producen y el endpoint no declara también hace fallar `dotnet test`.
+
+**Clave de firma de los tokens.** En `Development`, si `Identity:Tokens:SigningKey` está vacía, se genera una clave
+efímera al arrancar (los tokens dejan de valer al reiniciar). Fuera de `Development` la aplicación no arranca sin una
+clave EC P-256 en PEM, por ejemplo en la variable `Identity__Tokens__SigningKey`
+(`openssl ecparam -name prime256v1 -genkey -noout`).
 
 **Pruebas.** Cada corrida crea una base nueva (`nexgate_test_...`), la migra con el rol owner, se conecta con el rol de la
 aplicación y la borra al terminar. Las cadenas salen de `src/Nexgate.Host/appsettings.json`, o de las variables
@@ -77,10 +115,11 @@ aplicación y la borra al terminar. Las cadenas salen de `src/Nexgate.Host/appse
 **Migraciones nuevas.** `dotnet tool restore` instala `dotnet-ef`. Ejemplo:
 `dotnet ef migrations add <Nombre> --project src/Modules/<Modulo>/<Modulo>.Infrastructure --startup-project src/Nexgate.Host --context <Modulo>DbContext --output-dir Migrations`.
 Toda tabla de negocio debe llamar a `EnableTenantIsolation` y el schema a `GrantAppAccess`; una prueba lo verifica.
+Una función `SECURITY DEFINER` nueva tiene que fijar `search_path` y sumarse a la lista conocida de la prueba de catálogo.
 
 Estructura: `src/Nexgate.Host` (API), `src/Nexgate.Workers` (procesos en segundo plano), `src/BuildingBlocks` (piezas compartidas),
 `src/Modules/<Modulo>` (un proyecto por capa: Contracts, Domain, Application, Infrastructure), `tests/`, `infra/`.
-Módulos: `Tenancy` (organizaciones y sitios).
+Módulos: `Tenancy` (organizaciones y sitios) e `Identity` (cuentas, inicio de sesión, membresías, invitaciones y roles).
 
 ## Desarrollo con OpenSpec
 

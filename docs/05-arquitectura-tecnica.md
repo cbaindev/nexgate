@@ -68,8 +68,8 @@ Los módulos solo se referencian por `*.Contracts`.
 
 - Toda tabla de negocio lleva `organization_id` (los nombres de tablas y columnas van en inglés, Q-04).
 - **Row-Level Security** en PostgreSQL como defensa principal. Dos roles: `nexgate_owner` corre las migraciones y es dueño de las tablas; `nexgate_app` es el de la aplicación, sin propiedad, sin `BYPASSRLS` y sin acceso al historial de migraciones. La API nunca migra al arrancar (`dotnet run --project src/Nexgate.Host -- migrate`).
-- Un interceptor de EF Core fija la organización activa en la sesión cada vez que abre una conexión (`set_config('app.org_id', ..., false)`), y la deja vacía si no hay organización activa. Npgsql reinicia el estado de la sesión al devolver la conexión al pool, así que una conexión reutilizada no conserva la organización anterior.
-- Sin organización activa no se ve nada: `public.nexgate_current_org()` devuelve NULL y ninguna fila cumple la política (falla cerrado).
+- Un interceptor de EF Core fija la organización activa y el usuario actual en la sesión cada vez que abre una conexión (`set_config('app.org_id', ...)` y `set_config('app.user_id', ...)`), y los deja vacíos si no hay valor. Npgsql reinicia el estado de la sesión al devolver la conexión al pool, así que una conexión reutilizada no conserva los de una solicitud anterior.
+- Sin organización activa no se ve nada: `public.nexgate_current_org()` devuelve NULL y ninguna fila cumple la política (falla cerrado). `public.nexgate_current_user()` cumple el mismo papel para los datos aislados por usuario.
 - Además, **filtros globales de EF Core** como segunda barrera: el `DbContext` base filtra las entidades marcadas como de una organización, les asigna la organización activa al crearlas y rechaza cualquier cambio de organización.
 - Una prueba de catálogo falla si alguna tabla de negocio no tiene RLS habilitado, forzado y con política.
 
@@ -84,20 +84,29 @@ CREATE POLICY tenant_isolation ON access.grant
 
 Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, tabla)` y `GrantAppAccess(schema)`.
 
-- La organización activa sale del claim `org_id` del usuario autenticado. Hasta que exista identidad, hay un mecanismo de desarrollo (encabezado `X-Nexgate-Organization`, `Tenancy:DevelopmentAccess:Enabled`) que está apagado por defecto y que impide arrancar fuera de `Development`.
+- La organización activa sale solo del claim `org_id` del token, y vale solo si el usuario tiene una membresía activa en ella. Ningún encabezado ni parámetro la puede fijar.
+- Los datos de identidad que no pertenecen a una sola organización (`identity.user_account`, `identity.refresh_session`, `identity.refresh_token`) tienen RLS habilitado y forzado, aislado por usuario: cada uno ve lo suyo y un administrador ve las cuentas de los miembros de su organización. No son datos de negocio de un tenant (una cuenta sirve para varias organizaciones, D-04).
+- Antes de autenticar no hay usuario ni organización. Las búsquedas de ese momento (cuenta por correo, token de renovación, invitación) usan funciones `SECURITY DEFINER` que devuelven una sola fila por clave exacta, fijan `search_path` y solo las ejecuta `nexgate_app`. La prueba de catálogo rechaza cualquier otra.
+- Los flujos que actúan en nombre de otro usuario u organización (inicio de sesión, aceptar una invitación, nombres del selector) crean un alcance de DI con ese usuario y esa organización (`IContextScopeFactory`), después de verificar que corresponde. RLS hace el resto.
 - El **padrón** (módulo People) es la única excepción: vive fuera de RLS y solo se accede por un servicio con API estrecha (`ResolverSujeto(documento) → sujetoId`), con un rol de base de datos propio.
 - El acceso por **sitio** y por **espacio** se resuelve en la capa de aplicación con las asignaciones de rol.
 
 ## Identidad y autorización
 
-- **OpenIddict** (OIDC) o Keycloak si se prefiere un servidor externo. Tokens con la organización activa como claim.
-- Un usuario puede pertenecer a varias organizaciones (selector al ingresar).
-- Autorización por **permisos granulares** evaluados en el backend contra `asignacion_rol` y alcance. La interfaz solo refleja lo que el endpoint `GET /me/permissions` devuelve.
+- **Tokens propios** (módulo Identity): `POST /api/v1/auth/token` valida correo y contraseña y emite un token de acceso JWT ES256 de 15 minutos (`sub`, `org_id`, `sid`; sin correo, roles ni permisos) y un token de renovación opaco que rota en cada uso. Reutilizar un token ya rotado revoca la sesión entera. OpenIddict queda como opción si aparecen clientes de terceros o proveedores externos; el contrato del token no cambia.
+- Contraseñas con el hash PBKDF2 de ASP.NET Core Identity, de al menos 12 caracteres. Una cuenta inexistente responde igual que una contraseña equivocada, y los intentos se limitan por IP.
+- Un usuario puede pertenecer a varias organizaciones: con una sola membresía queda elegida al iniciar sesión; con varias, el cliente elige al iniciar sesión o al renovar (`organizationId`).
+- Autorización por **permisos granulares** evaluados en el servidor en cada solicitud a partir de las asignaciones de rol vigentes de la organización activa (`identity.role_assignment`: rol, alcance de organización o sitio, vigencia). Quitar un rol o una membresía tiene efecto en la solicitud siguiente aunque el token siga vigente. La interfaz solo refleja lo que devuelve `GET /api/v1/me/permissions`.
+- Estos permisos son administrativos, sobre la API. El acceso físico es exclusivo del motor de Otorgamientos.
+- El operador de plataforma (alta de organizaciones) se marca en la cuenta y se lee de la base en cada solicitud. El primero se crea con `dotnet run --project src/Nexgate.Host -- create-platform-operator --email <correo>`.
 - Los dispositivos usan una autenticación aparte (certificado o token por dispositivo).
 
 ## API y tiempo real
 
-- **REST** con OpenAPI y versionado. Cliente TypeScript generado desde el contrato.
+- **REST** con OpenAPI y versionado. El contrato es el documento OpenAPI 3.1 versionado en `api/nexgate-v1.openapi.json` (D-32); el frontend genera desde ahí su cliente o proxy TypeScript, sin levantar el backend.
+  - Lo genera el generador oficial de .NET a partir de los metadatos de cada endpoint: nombre de operación estable, resumen en español, esquemas, todas las respuestas de error (formato estándar con `code` y `correlationId`) y el requisito de token.
+  - Una prueba compara el documento generado con el versionado, y otra verifica que toda respuesta producida por las pruebas de integración esté declarada.
+  - Swagger UI (`/swagger`) y el documento (`/openapi/v1.json`) se sirven solo en `Development`.
 - **SignalR** para estado de puertas, eventos en vivo y novedades, con un grupo por sitio.
 - **Ingesta de eventos idempotente** (id de evento generado por el dispositivo).
 - Las operaciones largas (compilación, recálculo masivo) se disparan por eventos y las procesan los workers.

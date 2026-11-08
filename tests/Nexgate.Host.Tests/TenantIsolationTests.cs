@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using Nexgate.BuildingBlocks.Access;
 using Nexgate.BuildingBlocks.Persistence;
 using Nexgate.BuildingBlocks.Tenancy;
 using Nexgate.Modules.Tenancy.Domain;
@@ -18,10 +19,11 @@ public class TenantIsolationTests
 {
     private sealed record Tenant(Guid OrganizationId, Guid SiteId);
 
-    private static async Task<(TestDatabase Db, Tenant A, Tenant B)> TwoTenantsAsync()
+    private static async Task<(TestDatabase Db, Tenant A, Tenant B)> TwoTenantsAsync(NexgateFactory? existing = null)
     {
         var db = await TestDatabase.GetAsync();
-        using var factory = new NexgateFactory(db);
+        using var owned = existing is null ? new NexgateFactory(db) : null;
+        var factory = existing ?? owned!;
 
         async Task<Tenant> Create(string name)
         {
@@ -208,8 +210,8 @@ public class TenantIsolationTests
     [Fact]
     public async Task Resource_of_another_organization_and_a_nonexistent_one_get_the_same_response()
     {
-        var (db, a, b) = await TwoTenantsAsync();
-        using var factory = new NexgateFactory(db);
+        using var factory = new NexgateFactory();
+        var (_, a, b) = await TwoTenantsAsync(factory);
         using var client = factory.CreateClientFor(a.OrganizationId);
 
         var foreign = await client.GetAsync($"/api/v1/sites/{b.SiteId}");
@@ -228,18 +230,43 @@ public class TenantIsolationTests
         return json.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
 
-    private static TenancyDbContext CreateContext(string connectionString, Guid? organization)
+    private static TenancyDbContext CreateContext(string connectionString, Guid? organization, Guid? user = null)
     {
-        var current = new FixedOrganization(organization);
+        var current = new FixedOrganization(organization, user);
         var options = new DbContextOptionsBuilder<TenancyDbContext>();
         PersistenceExtensions.ConfigureNpgsql(options, connectionString, TenancyDbContext.Schema);
-        options.AddInterceptors(new OrganizationSessionInterceptor(current));
+        options.AddInterceptors(new SessionContextInterceptor(current, current));
         return new TenancyDbContext(options.Options, current);
     }
 
-    internal sealed class FixedOrganization(Guid? id) : ICurrentOrganization
+    [Fact]
+    public async Task Current_user_does_not_leak_to_the_next_use_of_a_pooled_connection()
+    {
+        var db = await TestDatabase.GetAsync();
+        var poolOfOne = db.AppConnection(maxPoolSize: 1);
+        var user = Guid.NewGuid();
+
+        await using (var withUser = CreateContext(poolOfOne, organization: null, user))
+        {
+            Assert.Equal(user.ToString(), await withUser.Database.SqlQuery<string>($"SELECT public.nexgate_current_user()::text AS \"Value\"").SingleAsync());
+        }
+
+        await using (var withoutUser = CreateContext(poolOfOne, organization: null))
+        {
+            Assert.Null(await withoutUser.Database.SqlQuery<string?>($"SELECT public.nexgate_current_user()::text AS \"Value\"").SingleAsync());
+        }
+
+        await using var raw = new NpgsqlConnection(poolOfOne);
+        await raw.OpenAsync();
+        await using var query = new NpgsqlCommand("SELECT public.nexgate_current_user()", raw);
+        Assert.Equal(DBNull.Value, await query.ExecuteScalarAsync());
+    }
+
+    internal sealed class FixedOrganization(Guid? id, Guid? user = null) : ICurrentOrganization, ICurrentUser
     {
         public Guid? Id => id;
+
+        Guid? ICurrentUser.Id => user;
     }
 }
 

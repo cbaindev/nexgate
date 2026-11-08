@@ -64,6 +64,7 @@ Registro de decisiones tomadas durante la fase de definición (2026-11-06). Cada
 | D-29 | Frontend **React + TypeScript**, panel único y PWA para residentes. |
 | D-30 | Dispositivos **ESP32** con firmware propio. ESPHome solo para prototipos. Comunicación MQTT sobre TLS. |
 | D-31 | Retrofit: aceptar los controles RF 433 MHz existentes para migrar gradualmente, empujando después a credenciales seguras (BLE, NFC, QR dinámico). |
+| D-32 | El contrato entre el frontend y el backend es el **documento OpenAPI** de la API, versionado en el repositorio y verificado por las pruebas. El frontend se comunica a través de un cliente o proxy generado desde ese documento. |
 
 ## Preguntas abiertas
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Nexgate.BuildingBlocks.Access;
 
 namespace Nexgate.BuildingBlocks.Persistence;
 
@@ -14,18 +15,19 @@ public static class PersistenceExtensions
 
     /// <summary>
     /// Registra el DbContext de un módulo con la conexión de la aplicación (rol sin privilegios) y el interceptor
-    /// que fija la organización activa. Las migraciones se aplican aparte, con el rol owner.
+    /// que fija la organización activa y el usuario actual. Las migraciones se aplican aparte, con el rol owner.
     /// </summary>
     public static IServiceCollection AddModuleDbContext<TContext>(this IServiceCollection services, string schema)
         where TContext : NexgateDbContext
     {
-        services.AddScoped<OrganizationSessionInterceptor>();
+        services.AddNexgateRequestContext();
+        services.AddScoped<SessionContextInterceptor>();
         services.AddDbContext<TContext>((sp, options) =>
         {
             var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString(AppConnectionName)
                 ?? throw new InvalidOperationException($"Falta la cadena de conexión '{AppConnectionName}'.");
             ConfigureNpgsql(options, connectionString, schema);
-            options.AddInterceptors(sp.GetRequiredService<OrganizationSessionInterceptor>());
+            options.AddInterceptors(sp.GetRequiredService<SessionContextInterceptor>());
         });
         services.AddSingleton(new ModuleDatabase(typeof(TContext), schema));
         services.AddDatabaseMigrator();

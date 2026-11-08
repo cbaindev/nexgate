@@ -27,6 +27,18 @@ public static class SiteTypeNames
     public static readonly IReadOnlyList<string> All = [Building, GatedCommunity, Company, House];
 }
 
+/// <summary>Organización activa del alcance actual, para otros módulos. Pasa por RLS: solo ve la organización activa.</summary>
+public interface IOrganizationDirectory
+{
+    Task<OrganizationDto?> GetActiveOrganizationAsync(CancellationToken cancellationToken);
+}
+
+/// <summary>Sitios de la organización activa, para otros módulos. Pasa por RLS: un sitio ajeno no existe.</summary>
+public interface ISiteDirectory
+{
+    Task<bool> ExistsAsync(Guid siteId, CancellationToken cancellationToken);
+}
+
 /// <summary>Códigos de error estables del módulo.</summary>
 public static class TenancyErrorCodes
 {

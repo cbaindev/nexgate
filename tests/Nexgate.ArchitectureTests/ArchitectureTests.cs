@@ -15,6 +15,10 @@ public class ArchitectureTests
         Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Domain" });
         Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Application" });
         Assert.Contains(projects, p => p is { Module: "Tenancy", Layer: "Infrastructure" });
+        Assert.Contains(projects, p => p is { Module: "Identity", Layer: "Contracts" });
+        Assert.Contains(projects, p => p is { Module: "Identity", Layer: "Domain" });
+        Assert.Contains(projects, p => p is { Module: "Identity", Layer: "Application" });
+        Assert.Contains(projects, p => p is { Module: "Identity", Layer: "Infrastructure" });
     }
 
     [Fact]

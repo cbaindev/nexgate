@@ -8,6 +8,7 @@
     <ProjectReference Include="..\Tenancy.Contracts\Tenancy.Contracts.csproj" />
     <ProjectReference Include="..\Tenancy.Application\Tenancy.Application.csproj" />
     <ProjectReference Include="..\Tenancy.Domain\Tenancy.Domain.csproj" />
+    <ProjectReference Include="..\..\Identity\Identity.Contracts\Identity.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Nexgate.BuildingBlocks.csproj" />
   </ItemGroup>
 

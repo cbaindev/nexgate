@@ -1,11 +1,12 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexgate.BuildingBlocks.Access;
 using Nexgate.BuildingBlocks.Correlation;
-using Nexgate.BuildingBlocks.Tenancy;
 
 namespace Nexgate.BuildingBlocks.Errors;
 
@@ -18,8 +19,12 @@ public static class ProblemDetailsSetup
     public static IServiceCollection AddNexgateWebDefaults(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
-        services.AddScoped<ICurrentOrganization, HttpContextCurrentOrganization>();
-        services.AddNexgateTenancy();
+        // Números estrictos en JSON: "5" no vale como 5. Así el contrato OpenAPI declara enteros y no "entero o texto".
+        services.ConfigureHttpJsonOptions(options => options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
+        services.AddNexgateRequestContext();
+        // Los esquemas de autenticación y las políticas de límite los agrega Identity.
+        services.AddAuthentication();
+        services.AddRateLimiter(_ => { });
 
         services.AddProblemDetails(options =>
         {
@@ -36,16 +41,19 @@ public static class ProblemDetailsSetup
     }
 
     /// <summary>
-    /// Orden del pipeline: correlación → manejo de errores → páginas de estado → organización activa →
-    /// enriquecimiento de telemetría. La autenticación (cuando exista) va antes de la organización activa.
+    /// Orden del pipeline: correlación → manejo de errores → páginas de estado → autenticación (token) →
+    /// contexto de la solicitud (usuario, organización activa y permisos) → enriquecimiento de telemetría →
+    /// límite de intentos.
     /// </summary>
     public static IApplicationBuilder UseNexgatePipeline(this IApplicationBuilder app)
     {
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseExceptionHandler();
         app.UseStatusCodePages();
-        app.UseMiddleware<OrganizationResolutionMiddleware>();
+        app.UseAuthentication();
+        app.UseMiddleware<RequestContextMiddleware>();
         app.UseMiddleware<Telemetry.TelemetryEnrichmentMiddleware>();
+        app.UseRateLimiter();
         return app;
     }
 

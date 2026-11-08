@@ -35,6 +35,52 @@ public sealed class TestDatabase
             ? new NpgsqlConnectionStringBuilder(AppConnectionString) { MaxPoolSize = size, ApplicationName = $"pool-{Guid.NewGuid():N}" }.ConnectionString
             : AppConnectionString;
 
+    /// <summary>
+    /// Ejecuta SQL como owner fuera de la API (preparar casos: cuenta deshabilitada, invitación vencida). Con FORCE,
+    /// RLS aplica también al owner, así que se suspende en las tablas indicadas solo dentro de esta transacción.
+    /// </summary>
+    public async Task<int> ExecuteAsOwnerAsync(string sql, string[] tables, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new NpgsqlConnection(OwnerConnectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        foreach (var table in tables)
+        {
+            await using var noForce = new NpgsqlCommand($"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY", connection, transaction);
+            await noForce.ExecuteNonQueryAsync();
+        }
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
+        var affected = await command.ExecuteNonQueryAsync();
+        foreach (var table in tables)
+        {
+            await using var force = new NpgsqlCommand($"ALTER TABLE {table} FORCE ROW LEVEL SECURITY", connection, transaction);
+            await force.ExecuteNonQueryAsync();
+        }
+
+        await transaction.CommitAsync();
+        return affected;
+    }
+
+    /// <summary>Conexión abierta como rol de la aplicación con el usuario y la organización indicados en la sesión.</summary>
+    public async Task<NpgsqlConnection> OpenAsAppAsync(Guid? organization = null, Guid? user = null)
+    {
+        var connection = new NpgsqlConnection(AppConnectionString);
+        await connection.OpenAsync();
+        await using var set = new NpgsqlCommand(
+            $"SELECT set_config('{DatabaseRoles.OrganizationSetting}', @org, false), set_config('{DatabaseRoles.UserSetting}', @user, false)",
+            connection);
+        set.Parameters.AddWithValue("org", organization?.ToString() ?? string.Empty);
+        set.Parameters.AddWithValue("user", user?.ToString() ?? string.Empty);
+        await set.ExecuteNonQueryAsync();
+        return connection;
+    }
+
     private static async Task<TestDatabase> CreateAsync()
     {
         var settings = new ConfigurationBuilder()
