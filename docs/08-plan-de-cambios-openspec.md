@@ -34,14 +34,14 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 |---|---|---|---|
 | 1 | `add-solution-foundation` (**implementado y archivado**) | `platform-api` | D-27, D-28, D-30 |
 | 2 | `add-tenancy-and-isolation` (**implementado y archivado**) | `tenancy/organizations-and-sites`, `tenancy/tenant-isolation` | D-02, D-28 |
-| 3 | `add-identity-and-roles` | `identity/authentication`, `identity/role-scopes` | D-03, D-04, D-05 |
-| 3b | `add-openapi-contract` (agregado: contrato OpenAPI y Swagger UI) | `platform-api` | D-29, D-32 |
+| 3 | `add-identity-and-roles` (**implementado y archivado**) | `identity/authentication`, `identity/role-scopes` | D-03, D-04, D-05 |
+| 3b | `add-openapi-contract` (agregado; **implementado y archivado**: contrato OpenAPI y Swagger UI) | `platform-api` | D-29, D-32 |
 | 4 | `add-spaces-and-access-points` | `spaces/space-tree`, `spaces/access-points` | D-06 |
 | 5 | `add-access-evaluator` | `access/grants`, `access/access-evaluation`, `access/policy-compilation` (con vectores de prueba compartidos con el firmware) | D-13 |
 | 6 | `add-device-sync-protocol` | `devices/device-provisioning`, `devices/policy-sync`, `events/event-ingestion` | D-30 |
 | 7 | `add-admin-panel-shell` | `web/admin-shell` | D-05, D-29 |
 
-> Pendiente para `add-identity-and-roles`: incluir la tarea de quitar o restringir el mecanismo de desarrollo de `add-tenancy-and-isolation` (encabezado `X-Nexgate-Organization`, opción `Tenancy:DevelopmentAccess:Enabled` y el endpoint `POST /api/v1/platform/organizations` que habilita), reemplazándolo por el claim `org_id` del usuario autenticado y un acceso de plataforma real.
+> Pendiente para `add-spaces-and-access-points`: agregar el alcance por espacio a `role-scopes` (hoy solo hay organización y sitio), con su validación contra el árbol de espacios, y declarar los endpoints nuevos en el contrato OpenAPI (`api/nexgate-v1.openapi.json`).
 
 ### Fase 2: MVP edificios
 

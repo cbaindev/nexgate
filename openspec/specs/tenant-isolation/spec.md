@@ -42,24 +42,43 @@ The system SHALL return no business data and accept no business writes when ther
 - **WHEN** a request for organization A finishes and a later request without an active organization reuses the same database connection
 - **THEN** the later request sees no data of organization A
 
-### Requirement: Active organization resolution
-The system SHALL resolve the active organization of each request from a trusted source, and SHALL NOT accept an organization supplied by the client unless a development-only mechanism is explicitly enabled in a development environment.
-
-#### Scenario: Development mechanism disabled
-- **WHEN** a client sends an organization identifier in a request header and the development mechanism is disabled
-- **THEN** the system ignores it and the request has no active organization
-
-#### Scenario: Development mechanism outside development
-- **WHEN** the development mechanism is enabled by configuration in an environment that is not development
-- **THEN** the system refuses to start and reports the misconfiguration without exposing secrets
-
-#### Scenario: Active organization in telemetry
-- **WHEN** a request has an active organization
-- **THEN** its logs and traces carry the organization identifier and never the organization name
-
 ### Requirement: Non-disclosure of other organizations
 The system SHALL respond to requests for resources of another organization exactly as it responds for resources that do not exist.
 
 #### Scenario: Guessing a resource identifier
 - **WHEN** a caller requests a resource by the identifier of a resource that belongs to another organization
 - **THEN** the system responds with HTTP 404 and the response body does not differ from that of a non-existent identifier
+
+### Requirement: Active organization from the access token
+The system SHALL resolve the active organization of each request only from the access token of the authenticated user, SHALL treat it as active only while that user has an active membership in it, and SHALL NOT accept an organization supplied by the client in any other way.
+
+#### Scenario: Organization supplied in a header
+- **WHEN** a client sends an organization identifier in a request header or in the query string
+- **THEN** the system ignores it, and the request has only the active organization stated in its access token, or none
+
+#### Scenario: Anonymous request
+- **WHEN** a request carries no access token
+- **THEN** the request has no active organization
+
+#### Scenario: Membership ended
+- **WHEN** a request carries an unexpired access token whose organization is one where the user no longer has an active membership
+- **THEN** the request has no active organization and organization-scoped operations respond with HTTP 403 and the missing organization context error code
+
+#### Scenario: Active organization in telemetry
+- **WHEN** a request has an active organization
+- **THEN** its logs and traces carry the organization identifier and never the organization name
+
+### Requirement: Isolation of platform identity data
+The system SHALL protect identity data that is not owned by a single organization, such as user accounts and sign-in sessions, with database-enforced rules, so that a caller sees only its own account and sessions plus the accounts of the members of its active organization.
+
+#### Scenario: Read accounts without filters
+- **WHEN** the application queries user accounts without filtering, on behalf of a user with an active organization
+- **THEN** the database returns only that user's account and the accounts of members of the active organization
+
+#### Scenario: Sessions of other users
+- **WHEN** the application queries sign-in sessions without filtering, on behalf of a user
+- **THEN** the database returns only the sessions of that user
+
+#### Scenario: Unauthenticated access
+- **WHEN** the application queries user accounts or sessions without a current user and without an active organization
+- **THEN** the database returns no rows, and sign-in uses only a lookup restricted to a single email
