@@ -37,4 +37,4 @@
 
 ## Workflow follow-up
 
-- Archivar el cambio con `openspec archive adopt-smt-layout-and-controllers`, para que el delta de `platform-api` pase a `openspec/specs/`.
+- Archivar el cambio con `openspec archive adopt-smt-layout-and-controllers`, para que el delta de `platform-api` pase a `openspec/specs/`. (Hecho el 2026-11-11.)

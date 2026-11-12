@@ -31,6 +31,10 @@ The system SHALL expose every business endpoint under a versioned path prefix.
 - **WHEN** a client calls a business endpoint without a version prefix
 - **THEN** the system responds with HTTP 404
 
+#### Scenario: Unsupported version
+- **WHEN** a client calls a business endpoint with a version prefix that the system does not support
+- **THEN** the system responds with HTTP 404 as a problem details document and does not process the request
+
 ### Requirement: Standard error format
 The system SHALL return every error response as a problem details document with a stable machine-readable error code, a human-readable title, the HTTP status and the request correlation identifier.
 
@@ -74,4 +78,16 @@ The system SHALL keep business modules independent, so that a module only depend
 
 #### Scenario: Direct reference between modules
 - **WHEN** a module references the internal code of another module instead of its contracts
+- **THEN** the automated architecture tests fail and the build is rejected
+
+#### Scenario: Layer dependency against the allowed direction
+- **WHEN** a layer of a module references a layer it is not allowed to depend on, such as the domain referencing persistence or persistence referencing the application services
+- **THEN** the automated architecture tests fail and the build is rejected
+
+#### Scenario: API layer bypassing module contracts
+- **WHEN** an HTTP endpoint of the API depends on a module type that is not part of that module's public contracts
+- **THEN** the automated architecture tests fail and the build is rejected
+
+#### Scenario: Shared code depending on modules or on the web layer
+- **WHEN** shared cross-cutting code references a business module, a process entry point or the web framework
 - **THEN** the automated architecture tests fail and the build is rejected
