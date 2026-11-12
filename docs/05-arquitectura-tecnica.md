@@ -9,8 +9,8 @@ flowchart LR
       PWA[PWA residente]
     end
     subgraph Nube
-      API[Nexgate.Host\nAPI REST + SignalR]
-      WRK[Workers\nMQTT bridge, compilador,\noutbox, retención]
+      API[Nexgate.Api.Rest\nAPI REST + SignalR]
+      WRK[Nexgate.Api.Workers\nMQTT bridge, compilador,\noutbox, retención]
       BRK[(Broker MQTT\nTLS)]
       DB[(PostgreSQL\nuna base, un schema por módulo)]
       BLOB[(Almacenamiento\npolíticas y firmware)]
@@ -45,17 +45,17 @@ Una sola aplicación .NET con módulos claros. Cada módulo es dueño de su **sc
 | Notifications | Mail, WhatsApp, SMS, push |
 | Admin / Billing | Cuotas, uso, facturación (después) |
 
-**Estructura de cada módulo** (para poder extraerlo como microservicio):
+**Estructura de cada módulo** (D-32): la solución sigue las capas numeradas de SMT y cada módulo tiene un proyecto en cada capa que necesita, para poder extraerlo como microservicio:
 
 ```
-Modules/Access/
-  Access.Contracts/        interfaces y eventos públicos
-  Access.Domain/
-  Access.Application/
-  Access.Infrastructure/   EF Core, repositorios, migraciones del schema "access"
+src/03.Service/Nexgate.Service.Access.Contracts/   interfaces, DTOs, modelos de entrada y eventos públicos
+src/03.Service/Nexgate.Service.Access/             servicios de aplicación y registro DI
+src/04.Data/Nexgate.Data.Access/                   EF Core, repositorios, migraciones del schema "access"
+src/05.Domain/Nexgate.Domain.Access/               entidades y reglas puras
+src/02.Api/Nexgate.Api.Rest/Controllers/Access/    controllers del módulo
 ```
 
-Los módulos solo se referencian por `*.Contracts`.
+Sentido de dependencias: `Api → Service → Data → Domain`, con `Common` disponible para `Service`, `Data` y los procesos. `Domain` y `Contracts` no referencian nada. Los módulos solo se referencian entre sí por `Nexgate.Service.<Modulo>.Contracts`, y solo desde la capa de servicio. La API referencia las capas internas únicamente para registrarlas en DI (`Extensions/ModuleExtensions.cs`); sus controllers solo usan los contratos (D-33).
 
 **Camino de crecimiento:**
 
@@ -91,7 +91,7 @@ CREATE POLICY aislamiento_tenant ON access.otorgamiento
 
 ## API y tiempo real
 
-- **REST** con OpenAPI y versionado. Cliente TypeScript generado desde el contrato.
+- **REST** con controllers (`[ApiController]`, D-33), versionado por segmento de URL (`api/v{version}`) y OpenAPI. Cliente TypeScript generado desde el contrato.
 - **SignalR** para estado de puertas, eventos en vivo y novedades, con un grupo por sitio.
 - **Ingesta de eventos idempotente** (id de evento generado por el dispositivo).
 - Las operaciones largas (compilación, recálculo masivo) se disparan por eventos y las procesan los workers.
@@ -127,7 +127,7 @@ CREATE POLICY aislamiento_tenant ON access.otorgamiento
 
 - Pruebas unitarias del dominio (evaluador y compilador).
 - Pruebas de integración con PostgreSQL real, incluyendo las políticas RLS. La cadena de conexión sale de `ConnectionStrings:Default` o de la variable `NEXGATE_TEST_PG`, de modo que sirve tanto con `docker-compose` como con un PostgreSQL instalado (Testcontainers queda como opción futura para CI).
-- Pruebas de arquitectura: las reglas de dependencia entre proyectos (módulos solo por `*.Contracts`, `Domain` sin paquetes ni frameworks, `BuildingBlocks` sin módulos) se verifican leyendo los `.csproj`, así fallan aunque la referencia todavía no se use en el código.
+- Pruebas de arquitectura (`src/07.Test/Nexgate.Test.Architecture`): las reglas de dependencia entre proyectos (sentido `Api → Service → Data → Domain`, módulos solo por `*.Contracts`, `Domain` y `Contracts` sin referencias ni paquetes, `Common` sin módulos, sin procesos y sin el framework web) se verifican leyendo los `.csproj`, así fallan aunque la referencia todavía no se use en el código. Además, una prueba por reflexión verifica que los controllers solo usen tipos de `*.Contracts`, de `Common` o del framework.
 - **Vectores de prueba compartidos** entre el evaluador de C# y el del firmware, para garantizar que ambos decidan lo mismo.
 - **Simulador de dispositivos** (cliente MQTT en .NET) para probar sincronización y eventos sin hardware.
 
@@ -146,13 +146,17 @@ CREATE POLICY aislamiento_tenant ON access.otorgamiento
 ```
 nexgate/
   docs/
-  src/
-    Nexgate.Host/              composición, API, SignalR
-    Nexgate.Workers/           MQTT bridge, compilador, outbox, retención
-    BuildingBlocks/            outbox, tenancy, mensajería, utilidades
-    Modules/                   un directorio por módulo (ver arriba)
-  web/                         React + TypeScript
-  firmware/                    ESP32
-  infra/                       Docker Compose, IaC, scripts
-  tests/
+  src/                                capas numeradas (D-32)
+    01.Client/                        React + TypeScript (llega con add-admin-panel-shell)
+    02.Api/
+      Nexgate.Api.Rest/               composición, controllers, middlewares, SignalR
+      Nexgate.Api.Workers/            MQTT bridge, compilador, outbox, retención
+    03.Service/                       Nexgate.Service.<Modulo> y Nexgate.Service.<Modulo>.Contracts
+    04.Data/                          Nexgate.Data.<Modulo>
+    05.Domain/                        Nexgate.Domain.<Modulo>
+    06.Common/
+      Nexgate.Common.BuildingBlocks/  tenancy, telemetría, salud; luego outbox y mensajería (sin dependencias HTTP)
+    07.Test/                          pruebas de la API y de arquitectura
+  firmware/                           ESP32
+  infra/                              Docker Compose, IaC, scripts
 ```

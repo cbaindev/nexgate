@@ -33,6 +33,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | # | Cambio | Capacidades (specs) | Decisiones |
 |---|---|---|---|
 | 1 | `add-solution-foundation` (**implementado y archivado**) | `platform-api` | D-27, D-28, D-30 |
+| 1b | `adopt-smt-layout-and-controllers` (**implementado y archivado**): estructura en capas numeradas al estilo SMT y API con controllers | `platform-api` | D-27, D-32, D-33 |
 | 2 | `add-tenancy-and-isolation` | `tenancy/organizations-and-sites`, `tenancy/tenant-isolation` | D-02, D-28 |
 | 3 | `add-identity-and-roles` | `identity/authentication`, `identity/role-scopes` | D-03, D-04, D-05 |
 | 4 | `add-spaces-and-access-points` | `spaces/space-tree`, `spaces/access-points` | D-06 |
