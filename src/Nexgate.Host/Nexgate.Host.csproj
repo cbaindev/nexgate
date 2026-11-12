@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-
-  <ItemGroup>
-    <ProjectReference Include="..\BuildingBlocks\Nexgate.BuildingBlocks.csproj" />
-    <ProjectReference Include="..\Modules\Sample\Sample.Infrastructure\Sample.Infrastructure.csproj" />
-  </ItemGroup>
-
-</Project>

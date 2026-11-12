@@ -1,20 +1,22 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Nexgate.Host/Nexgate.Host.csproj" />
-    <Project Path="src/Nexgate.Workers/Nexgate.Workers.csproj" />
+  <Folder Name="/01.Client/" />
+  <Folder Name="/02.Api/">
+    <Project Path="src/02.Api/Nexgate.Api.Rest/Nexgate.Api.Rest.csproj" />
+    <Project Path="src/02.Api/Nexgate.Api.Workers/Nexgate.Api.Workers.csproj" />
   </Folder>
-  <Folder Name="/src/BuildingBlocks/">
-    <Project Path="src/BuildingBlocks/Nexgate.BuildingBlocks.csproj" />
+  <Folder Name="/03.Service/">
+    <Project Path="src/03.Service/Nexgate.Service.Sample.Contracts/Nexgate.Service.Sample.Contracts.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Sample/Nexgate.Service.Sample.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/" />
-  <Folder Name="/src/Modules/Sample/">
-    <Project Path="src/Modules/Sample/Sample.Application/Sample.Application.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Contracts/Sample.Contracts.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Domain/Sample.Domain.csproj" />
-    <Project Path="src/Modules/Sample/Sample.Infrastructure/Sample.Infrastructure.csproj" />
+  <Folder Name="/04.Data/" />
+  <Folder Name="/05.Domain/">
+    <Project Path="src/05.Domain/Nexgate.Domain.Sample/Nexgate.Domain.Sample.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Nexgate.ArchitectureTests/Nexgate.ArchitectureTests.csproj" />
-    <Project Path="tests/Nexgate.Host.Tests/Nexgate.Host.Tests.csproj" />
+  <Folder Name="/06.Common/">
+    <Project Path="src/06.Common/Nexgate.Common.BuildingBlocks/Nexgate.Common.BuildingBlocks.csproj" />
+  </Folder>
+  <Folder Name="/07.Test/">
+    <Project Path="src/07.Test/Nexgate.Test.Api/Nexgate.Test.Api.csproj" />
+    <Project Path="src/07.Test/Nexgate.Test.Architecture/Nexgate.Test.Architecture.csproj" />
   </Folder>
 </Solution>

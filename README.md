@@ -41,7 +41,7 @@ Requisitos: SDK de .NET 10 (ver `global.json`) y Docker.
 docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d
 
 # 2. Correr la API (http://localhost:5095)
-dotnet run --project src/Nexgate.Host
+dotnet run --project src/02.Api/Nexgate.Api.Rest
 
 # 3. Verificar
 curl http://localhost:5095/health/live      # el proceso responde
@@ -52,12 +52,22 @@ curl http://localhost:5095/api/v1/sample/ping
 dotnet test
 ```
 
-Las pruebas de integración usan la cadena de conexión `ConnectionStrings:Default` de `src/Nexgate.Host/appsettings.json`
+Las pruebas de integración usan la cadena de conexión `ConnectionStrings:Default` de `src/02.Api/Nexgate.Api.Rest/appsettings.json`
 (la misma que crea `docker-compose`). Para apuntar a otra base, definir la variable de entorno `NEXGATE_TEST_PG`.
 
-Estructura: `src/Nexgate.Host` (API), `src/Nexgate.Workers` (procesos en segundo plano), `src/BuildingBlocks` (piezas compartidas),
-`src/Modules/<Modulo>` (un proyecto por capa: Contracts, Domain, Application, Infrastructure), `tests/`, `infra/`.
-`Sample` es un módulo de ejemplo descartable.
+Estructura (capas numeradas, con un proyecto por módulo dentro de cada capa):
+
+| Carpeta | Contenido |
+|---|---|
+| `src/01.Client` | Frontend (reservado) |
+| `src/02.Api` | `Nexgate.Api.Rest` (API) y `Nexgate.Api.Workers` (procesos en segundo plano) |
+| `src/03.Service` | `Nexgate.Service.<Modulo>` (servicios) y `Nexgate.Service.<Modulo>.Contracts` (contrato público del módulo) |
+| `src/04.Data` | `Nexgate.Data.<Modulo>` (persistencia, cuando el módulo la tenga) |
+| `src/05.Domain` | `Nexgate.Domain.<Modulo>` (dominio) |
+| `src/06.Common` | `Nexgate.Common.BuildingBlocks` (piezas compartidas) |
+| `src/07.Test` | Pruebas de la API y de arquitectura |
+
+Además, `infra/` tiene la infraestructura local. `Sample` es un módulo de ejemplo descartable.
 
 ## Desarrollo con OpenSpec
 

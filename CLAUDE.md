@@ -8,6 +8,7 @@ Plataforma multitenant de control de acceso físico (edificios primero; countrie
 - `openspec/config.yaml`: contexto y reglas del proyecto para los artefactos de OpenSpec.
 - `openspec/specs/`: comportamiento acordado del sistema (fuente de verdad).
 - `openspec/changes/`: cambios en curso, cada uno con proposal, specs, design y tasks.
+- `src/`: capas numeradas al estilo SMT (D-32): `02.Api` (API con controllers y workers), `03.Service` (`Nexgate.Service.<Modulo>` y su `.Contracts`), `04.Data`, `05.Domain`, `06.Common`, `07.Test`. Un proyecto por módulo dentro de cada capa.
 
 ## Cómo trabajamos
 

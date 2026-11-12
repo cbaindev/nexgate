@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" Version="10.2.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Sample.Contracts\Nexgate.Service.Sample.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Sample\Nexgate.Service.Sample.csproj" />
+  </ItemGroup>
+
+</Project>

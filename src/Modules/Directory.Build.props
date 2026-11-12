@@ -1,7 +1,0 @@
-<Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  <PropertyGroup>
-    <AssemblyName>Nexgate.Modules.$(MSBuildProjectName)</AssemblyName>
-    <RootNamespace>Nexgate.Modules.$(MSBuildProjectName)</RootNamespace>
-  </PropertyGroup>
-</Project>
