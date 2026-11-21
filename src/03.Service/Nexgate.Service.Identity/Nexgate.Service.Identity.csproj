@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Hash de contraseñas (PasswordHasher) y emisión de JWT sin depender del framework web. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexgate.Service.Identity.Contracts\Nexgate.Service.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\04.Data\Nexgate.Data.Identity\Nexgate.Data.Identity.csproj" />
+    <ProjectReference Include="..\..\05.Domain\Nexgate.Domain.Identity\Nexgate.Domain.Identity.csproj" />
+    <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>

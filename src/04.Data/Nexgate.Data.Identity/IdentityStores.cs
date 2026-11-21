@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Nexgate.BuildingBlocks.Access;
-using Nexgate.BuildingBlocks.Tenancy;
-using Nexgate.Modules.Identity.Application;
-using Nexgate.Modules.Identity.Domain;
-using Nexgate.Modules.Tenancy.Contracts;
+using Nexgate.Common.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Security;
+using Nexgate.Service.Identity.Contracts;
+using Nexgate.Common.BuildingBlocks.Tenancy;
+using Nexgate.Domain.Identity;
 using Npgsql;
 
-namespace Nexgate.Modules.Identity.Infrastructure;
+namespace Nexgate.Data.Identity;
 
 /// <summary>Búsquedas previas a la autenticación con las funciones <c>SECURITY DEFINER</c> (design, decisión 6).</summary>
 internal sealed class IdentityLookups(IdentityDbContext db) : IIdentityLookups
@@ -177,7 +177,7 @@ internal sealed class InvitationStore(IdentityDbContext db, IContextScopeFactory
     public async Task<bool> AddForOrganizationAsync(Invitation invitation, Guid actingUserId, CancellationToken cancellationToken)
     {
         await using var scope = scopes.Create(actingUserId, invitation.OrganizationId);
-        if (await scope.ServiceProvider.GetRequiredService<IOrganizationDirectory>().GetActiveOrganizationAsync(cancellationToken) is null)
+        if (!await scope.ServiceProvider.GetRequiredService<IOrganizationReferences>().ActiveOrganizationExistsAsync(cancellationToken))
         {
             return false;
         }
@@ -220,7 +220,7 @@ internal sealed class InvitationStore(IdentityDbContext db, IContextScopeFactory
 
         var invitation = await scoped.Invitations.AsNoTracking().SingleAsync(i => i.Id == record.InvitationId, cancellationToken);
         if (invitation.ScopeId is { } siteId
-            && !await scope.ServiceProvider.GetRequiredService<ISiteDirectory>().ExistsAsync(siteId, cancellationToken))
+            && !await scope.ServiceProvider.GetRequiredService<IOrganizationReferences>().SiteExistsAsync(siteId, cancellationToken))
         {
             return AcceptOutcome.InvalidInvitation;
         }
@@ -325,40 +325,37 @@ internal sealed class MemberStore(IdentityDbContext db, ICurrentOrganization org
         .ToList();
 }
 
-/// <summary>Lee el nombre de cada organización con esa organización activa (design, decisión 8).</summary>
-internal sealed class OrganizationNames(IContextScopeFactory scopes) : IOrganizationNames
+/// <summary>Consultas de la resolución de acceso, en una sola consulta bajo RLS (design, decisión 7).</summary>
+internal sealed class AccessQueries(IdentityDbContext db) : IAccessQueries
 {
-    public async Task<string?> GetNameAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken)
-    {
-        await using var scope = scopes.Create(userId, organizationId);
-        var organization = await scope.ServiceProvider.GetRequiredService<IOrganizationDirectory>().GetActiveOrganizationAsync(cancellationToken);
-        return organization?.Name;
-    }
-}
-
-/// <summary>Membresía y permisos efectivos de la solicitud, en una sola consulta bajo RLS (design, decisión 7).</summary>
-internal sealed class IdentityAccessResolver(IdentityDbContext db, TimeProvider clock) : IRequestAccessResolver
-{
-    public async Task<IReadOnlyList<PermissionGrant>?> ResolveAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RoleAssignment>?> FindMembershipAssignmentsAsync(Guid userId, Guid organizationId,
+        CancellationToken cancellationToken)
     {
         var membership = await db.Memberships.AsNoTracking()
             .Where(m => m.UserId == userId && m.OrganizationId == organizationId)
             .Select(m => new { Assignments = db.RoleAssignments.Where(r => r.UserId == userId).ToList() })
             .SingleOrDefaultAsync(cancellationToken);
-
-        return membership is null
-            ? null
-            : PermissionCatalog.Grants(membership.Assignments, clock.GetUtcNow())
-                .Select(g => new PermissionGrant(g.Permission, g.SiteId))
-                .ToList();
+        return membership?.Assignments;
     }
+
+    /// <summary>El operador de plataforma se lee de la base en cada solicitud, no del token.</summary>
+    public Task<bool> IsPlatformOperatorAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.UserAccounts.AsNoTracking()
+            .AnyAsync(a => a.Id == userId && a.PlatformOperator && a.Status == AccountStatus.Active, cancellationToken);
 }
 
-/// <summary>El operador de plataforma se lee de la base en cada solicitud, no del token.</summary>
-internal sealed class IdentityPlatformAccess(IdentityDbContext db, ICurrentUser user) : IPlatformAccess
+public static class IdentityDataServiceCollectionExtensions
 {
-    public async Task<bool> IsPlatformOperatorAsync(CancellationToken cancellationToken) =>
-        user.Id is { } userId
-        && await db.UserAccounts.AsNoTracking()
-            .AnyAsync(a => a.Id == userId && a.PlatformOperator && a.Status == AccountStatus.Active, cancellationToken);
+    /// <summary>Persistencia de Identity (schema <c>identity</c>). La registra <c>AddIdentityService</c>.</summary>
+    public static IServiceCollection AddIdentityData(this IServiceCollection services)
+    {
+        services.AddModuleDbContext<IdentityDbContext>(IdentityDbContext.Schema);
+        services.AddScoped<IIdentityLookups, IdentityLookups>();
+        services.AddScoped<IAccountStore, AccountStore>();
+        services.AddScoped<ISessionStore, SessionStore>();
+        services.AddScoped<IInvitationStore, InvitationStore>();
+        services.AddScoped<IMemberStore, MemberStore>();
+        services.AddScoped<IAccessQueries, AccessQueries>();
+        return services;
+    }
 }

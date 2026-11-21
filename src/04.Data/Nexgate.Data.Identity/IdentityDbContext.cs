@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Nexgate.BuildingBlocks.Persistence;
-using Nexgate.BuildingBlocks.Tenancy;
-using Nexgate.Modules.Identity.Domain;
+using Nexgate.Common.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Tenancy;
+using Nexgate.Domain.Identity;
 
-namespace Nexgate.Modules.Identity.Infrastructure;
+namespace Nexgate.Data.Identity;
 
 /// <summary>
 /// Schema <c>identity</c>. Las políticas RLS y las funciones restringidas están en la migración inicial

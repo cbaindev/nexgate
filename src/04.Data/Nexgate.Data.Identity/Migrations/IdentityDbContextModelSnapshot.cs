@@ -3,12 +3,12 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Nexgate.Modules.Identity.Infrastructure;
+using Nexgate.Data.Identity;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Nexgate.Modules.Identity.Infrastructure.Migrations
+namespace Nexgate.Data.Identity.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
     partial class IdentityDbContextModelSnapshot : ModelSnapshot
@@ -23,7 +23,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.Invitation", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -94,7 +94,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.HasAnnotation("Nexgate:TenantOwned", true);
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.Membership", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.Membership", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -125,7 +125,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.HasAnnotation("Nexgate:TenantOwned", true);
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RefreshSession", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RefreshSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -159,7 +159,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.ToTable("refresh_session", "identity");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RefreshToken", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -198,7 +198,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.ToTable("refresh_token", "identity");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RoleAssignment", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RoleAssignment", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -250,7 +250,7 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.HasAnnotation("Nexgate:TenantOwned", true);
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.UserAccount", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -296,9 +296,9 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                     b.ToTable("user_account", "identity");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.Membership", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.Membership", b =>
                 {
-                    b.HasOne("Nexgate.Modules.Identity.Domain.UserAccount", null)
+                    b.HasOne("Nexgate.Domain.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -306,9 +306,9 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                         .HasConstraintName("fk_membership_user");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RefreshSession", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RefreshSession", b =>
                 {
-                    b.HasOne("Nexgate.Modules.Identity.Domain.UserAccount", null)
+                    b.HasOne("Nexgate.Domain.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -316,9 +316,9 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                         .HasConstraintName("fk_refresh_session_user");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RefreshToken", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RefreshToken", b =>
                 {
-                    b.HasOne("Nexgate.Modules.Identity.Domain.RefreshSession", null)
+                    b.HasOne("Nexgate.Domain.Identity.RefreshSession", null)
                         .WithMany()
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -326,9 +326,9 @@ namespace Nexgate.Modules.Identity.Infrastructure.Migrations
                         .HasConstraintName("fk_refresh_token_session");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Identity.Domain.RoleAssignment", b =>
+            modelBuilder.Entity("Nexgate.Domain.Identity.RoleAssignment", b =>
                 {
-                    b.HasOne("Nexgate.Modules.Identity.Domain.Membership", null)
+                    b.HasOne("Nexgate.Domain.Identity.Membership", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId", "UserId")
                         .HasPrincipalKey("OrganizationId", "UserId")

@@ -5,11 +5,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Nexgate.BuildingBlocks.Access;
-using Nexgate.Modules.Identity.Application;
-using Nexgate.Modules.Identity.Domain;
+using Nexgate.Common.BuildingBlocks.Security;
+using Nexgate.Service.Identity;
+using Nexgate.Domain.Identity;
 
-namespace Nexgate.Modules.Identity.Infrastructure;
+namespace Nexgate.Service.Identity;
 
 /// <summary>Configuración del módulo (sección <c>Identity</c>).</summary>
 public sealed class IdentityModuleOptions

@@ -1,4 +1,4 @@
-namespace Nexgate.Modules.Identity.Contracts;
+namespace Nexgate.Service.Identity.Contracts;
 
 /// <summary>
 /// Permisos administrativos sobre la API (no son acceso físico: ese es exclusivo del motor de Otorgamientos).

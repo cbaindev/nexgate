@@ -1,38 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
-using Nexgate.Modules.Identity.Contracts;
-using Nexgate.Modules.Identity.Domain;
-using Nexgate.Modules.Tenancy.Contracts;
+using Nexgate.Data.Identity;
+using Nexgate.Domain.Identity;
+using Nexgate.Service.Identity.Contracts;
+using Nexgate.Service.Tenancy.Contracts;
 
-namespace Nexgate.Modules.Identity.Application;
-
-public enum IdentityErrorKind
-{
-    Validation,
-    NotFound,
-    Conflict,
-    InvalidCredentials,
-    OrganizationNotAvailable,
-    InvalidRefreshToken,
-    InvalidInvitation,
-    AuthenticationRequired
-}
-
-public sealed record IdentityError(IdentityErrorKind Kind, string? Field = null, string? Message = null);
-
-/// <summary>Resultado de un caso de uso: un valor o un error esperado (los errores de programación son excepciones).</summary>
-public sealed record IdentityResult<T>(T? Value, IdentityError? Error)
-{
-    public static IdentityResult<T> Ok(T value) => new(value, null);
-
-    public static IdentityResult<T> Fail(IdentityErrorKind kind, string? field = null, string? message = null) =>
-        new(default, new IdentityError(kind, field, message));
-
-    public static IdentityResult<T> Invalid(DomainValidationException e) => Fail(IdentityErrorKind.Validation, e.Field, e.Message);
-}
+namespace Nexgate.Service.Identity;
 
 /// <summary>Tokens opacos (renovación, invitaciones): 256 bits aleatorios; solo se guarda su SHA-256.</summary>
-public static class OpaqueTokens
+internal static class OpaqueTokens
 {
     public static (string Token, byte[] Hash) Create()
     {
@@ -43,89 +19,15 @@ public static class OpaqueTokens
     public static byte[] Hash(string token) => SHA256.HashData(Encoding.UTF8.GetBytes(token));
 }
 
-public static class IdentityNames
-{
-    public static bool TryParseRole(string? value, out Role role)
-    {
-        (var ok, role) = value switch
-        {
-            RoleNames.Administrator => (true, Role.Administrator),
-            RoleNames.Guard => (true, Role.Guard),
-            RoleNames.Resident => (true, Role.Resident),
-            RoleNames.Employee => (true, Role.Employee),
-            _ => (false, default)
-        };
-        return ok;
-    }
-
-    public static string ToName(Role role) => role switch
-    {
-        Role.Administrator => RoleNames.Administrator,
-        Role.Guard => RoleNames.Guard,
-        Role.Resident => RoleNames.Resident,
-        Role.Employee => RoleNames.Employee,
-        _ => throw new ArgumentOutOfRangeException(nameof(role))
-    };
-
-    public static bool TryParseScope(string? value, out ScopeType scope)
-    {
-        (var ok, scope) = value switch
-        {
-            ScopeTypeNames.Organization => (true, ScopeType.Organization),
-            ScopeTypeNames.Site => (true, ScopeType.Site),
-            _ => (false, default)
-        };
-        return ok;
-    }
-
-    public static string ToName(ScopeType scope) => scope switch
-    {
-        ScopeType.Organization => ScopeTypeNames.Organization,
-        ScopeType.Site => ScopeTypeNames.Site,
-        _ => throw new ArgumentOutOfRangeException(nameof(scope))
-    };
-}
-
-/// <summary>
-/// Catálogo de permisos por rol (design, decisión 7). Los permisos se derivan solo de las asignaciones vigentes de la
-/// organización activa; con alcance de sitio cubren solo ese sitio.
-/// </summary>
-public static class PermissionCatalog
-{
-    private static readonly IReadOnlyDictionary<Role, string[]> ByRole = new Dictionary<Role, string[]>
-    {
-        [Role.Administrator] =
-        [
-            Permissions.OrganizationRead, Permissions.SitesRead, Permissions.SitesManage,
-            Permissions.MembersRead, Permissions.MembersManage
-        ],
-        [Role.Guard] = [Permissions.OrganizationRead, Permissions.SitesRead],
-        [Role.Resident] = [Permissions.OrganizationRead, Permissions.SitesRead],
-        [Role.Employee] = [Permissions.OrganizationRead, Permissions.SitesRead]
-    };
-
-    public static IReadOnlyList<string> PermissionsOf(Role role) => ByRole[role];
-
-    /// <summary>Pares (permiso, sitio) sin repetir; sitio nulo es alcance de organización.</summary>
-    public static IReadOnlyList<(string Permission, Guid? SiteId)> Grants(IEnumerable<RoleAssignment> assignments, DateTimeOffset now) =>
-        assignments
-            .Where(a => a.IsValidAt(now))
-            .SelectMany(a => ByRole[a.Role].Select(p => (Permission: p, SiteId: a.ScopeType == ScopeType.Organization ? null : a.ScopeId)))
-            .Distinct()
-            .ToList();
-}
-
-public sealed record TokenPair(string AccessToken, DateTimeOffset AccessTokenExpiresAt, string RefreshToken, Guid? OrganizationId);
-
 /// <summary>Inicio de sesión, renovación con rotación y cierre de sesión (design, decisiones 1 a 3).</summary>
-public sealed class AuthenticationService(
+internal sealed class AuthenticationService(
     IIdentityLookups lookups,
     IPasswordHashing passwords,
     IAccountStore accounts,
     ISessionStore sessions,
     IAccessTokenIssuer tokens,
     IdentityLifetimes lifetimes,
-    TimeProvider clock)
+    TimeProvider clock) : IAuthenticationService
 {
     public async Task<IdentityResult<TokenPair>> SignInAsync(string? email, string? password, Guid? organizationId,
         CancellationToken cancellationToken)
@@ -240,18 +142,14 @@ public sealed class AuthenticationService(
     }
 }
 
-public sealed record InvitationInput(string? Email, string? Role, string? ScopeType, Guid? SiteId);
-
-public sealed record AcceptedInvitation(Guid UserId, Guid OrganizationId);
-
 /// <summary>Invitaciones y su aceptación (design, decisión 9).</summary>
-public sealed class InvitationService(
+internal sealed class InvitationService(
     IInvitationStore invitations,
     IIdentityLookups lookups,
     IPasswordHashing passwords,
     ISiteDirectory sites,
     IdentityLifetimes lifetimes,
-    TimeProvider clock) : IAdministratorInvitations
+    TimeProvider clock) : IInvitationService, IAdministratorInvitations
 {
     /// <summary>Invita a la organización activa. La respuesta no depende de si el correo ya tiene cuenta.</summary>
     public async Task<IdentityResult<IssuedInvitation>> InviteAsync(Guid organizationId, Guid createdBy, InvitationInput input,
@@ -306,7 +204,7 @@ public sealed class InvitationService(
             }
             catch (DomainValidationException e)
             {
-                return IdentityResult<AcceptedInvitation>.Invalid(e);
+                return IdentityFailures.Invalid<AcceptedInvitation>(e);
             }
 
             newAccount = UserAccount.Create(invitation.NormalizedEmail, passwords.Hash(password!), platformOperator: false, now);
@@ -352,7 +250,7 @@ public sealed class InvitationService(
             invitation.ScopeId, invitation.ExpiresAt, token);
 }
 
-public static class RoleScopes
+internal static class RoleScopes
 {
     /// <summary>
     /// Valida rol y alcance. Un sitio inexistente y uno de otra organización dan el mismo error (el directorio de
@@ -378,7 +276,7 @@ public static class RoleScopes
         }
         catch (DomainValidationException e)
         {
-            return IdentityResult<(Role, RoleScope)>.Invalid(e);
+            return IdentityFailures.Invalid<(Role, RoleScope)>(e);
         }
 
         if (scope.SiteId is { } id && !await sites.ExistsAsync(id, cancellationToken))
@@ -390,25 +288,26 @@ public static class RoleScopes
     }
 }
 
-public sealed record RoleAssignmentInput(string? Role, string? ScopeType, Guid? SiteId, DateTimeOffset? ValidFrom, DateTimeOffset? ValidUntil);
-
 /// <summary>Miembros y asignaciones de rol de la organización activa (design, decisiones 7 y 10).</summary>
-public sealed class MemberService(IMemberStore members, ISiteDirectory sites, TimeProvider clock)
+internal sealed class MemberService(IMemberStore members, ISiteDirectory sites, TimeProvider clock) : IMemberService
 {
-    public Task<IReadOnlyList<MemberRecord>> ListAsync(CancellationToken cancellationToken) => members.ListAsync(cancellationToken);
+    public async Task<IReadOnlyList<MemberDto>> ListAsync(CancellationToken cancellationToken) =>
+        (await members.ListAsync(cancellationToken))
+        .Select(m => new MemberDto(m.UserId, m.Email, m.RoleAssignments.Select(ToDto).ToList()))
+        .ToList();
 
-    public async Task<IdentityResult<RoleAssignment>> AssignRoleAsync(Guid organizationId, Guid userId, RoleAssignmentInput input,
+    public async Task<IdentityResult<RoleAssignmentDto>> AssignRoleAsync(Guid organizationId, Guid userId, RoleAssignmentInput input,
         CancellationToken cancellationToken)
     {
         if (!await members.IsMemberAsync(userId, cancellationToken))
         {
-            return IdentityResult<RoleAssignment>.Fail(IdentityErrorKind.NotFound);
+            return IdentityResult<RoleAssignmentDto>.Fail(IdentityErrorKind.NotFound);
         }
 
         var parsed = await RoleScopes.ParseAsync(input.Role, input.ScopeType, input.SiteId, sites, cancellationToken);
         if (parsed.Error is not null)
         {
-            return IdentityResult<RoleAssignment>.Fail(parsed.Error.Kind, parsed.Error.Field, parsed.Error.Message);
+            return IdentityResult<RoleAssignmentDto>.Fail(parsed.Error.Kind, parsed.Error.Field, parsed.Error.Message);
         }
 
         RoleAssignment assignment;
@@ -419,11 +318,11 @@ public sealed class MemberService(IMemberStore members, ISiteDirectory sites, Ti
         }
         catch (DomainValidationException e)
         {
-            return IdentityResult<RoleAssignment>.Invalid(e);
+            return IdentityFailures.Invalid<RoleAssignmentDto>(e);
         }
 
         await members.AddRoleAssignmentAsync(assignment, cancellationToken);
-        return IdentityResult<RoleAssignment>.Ok(assignment);
+        return IdentityResult<RoleAssignmentDto>.Ok(ToDto(assignment));
     }
 
     public Task<RemovalOutcome> RemoveMemberAsync(Guid userId, CancellationToken cancellationToken) =>
@@ -431,14 +330,14 @@ public sealed class MemberService(IMemberStore members, ISiteDirectory sites, Ti
 
     public Task<RemovalOutcome> RevokeRoleAsync(Guid userId, Guid assignmentId, CancellationToken cancellationToken) =>
         members.RevokeRoleAssignmentAsync(userId, assignmentId, clock.GetUtcNow(), cancellationToken);
+
+    private static RoleAssignmentDto ToDto(RoleAssignment assignment) =>
+        new(assignment.Id, IdentityNames.ToName(assignment.Role), IdentityNames.ToName(assignment.ScopeType), assignment.ScopeId,
+            assignment.ValidFrom, assignment.ValidUntil);
 }
 
-public sealed record OrganizationSummary(Guid Id, string Name);
-
-public sealed record CurrentUserInfo(Guid Id, string Email, Guid? ActiveOrganizationId, IReadOnlyList<OrganizationSummary> Organizations);
-
 /// <summary>Datos del usuario actual y sus organizaciones, para el selector (design, decisión 8).</summary>
-public sealed class CurrentUserService(IAccountStore accounts, IOrganizationNames organizationNames)
+internal sealed class CurrentUserService(IAccountStore accounts, IOrganizationNames organizationNames) : ICurrentUserService
 {
     public async Task<CurrentUserInfo?> GetAsync(Guid userId, Guid? activeOrganizationId, CancellationToken cancellationToken)
     {
@@ -461,14 +360,9 @@ public sealed class CurrentUserService(IAccountStore accounts, IOrganizationName
     }
 }
 
-public enum PlatformOperatorOutcome
-{
-    Created,
-    Promoted
-}
-
 /// <summary>Alta del operador de plataforma desde el comando del host (design, decisión 11).</summary>
-public sealed class PlatformOperatorService(IIdentityLookups lookups, IAccountStore accounts, IPasswordHashing passwords, TimeProvider clock)
+internal sealed class PlatformOperatorService(IIdentityLookups lookups, IAccountStore accounts, IPasswordHashing passwords, TimeProvider clock)
+    : IPlatformOperators
 {
     public async Task<IdentityResult<PlatformOperatorOutcome>> EnsureAsync(string? email, string? password, CancellationToken cancellationToken)
     {
@@ -493,7 +387,12 @@ public sealed class PlatformOperatorService(IIdentityLookups lookups, IAccountSt
         }
         catch (DomainValidationException e)
         {
-            return IdentityResult<PlatformOperatorOutcome>.Invalid(e);
+            return IdentityFailures.Invalid<PlatformOperatorOutcome>(e);
         }
     }
+}
+
+internal static class IdentityFailures
+{
+    public static IdentityResult<T> Invalid<T>(DomainValidationException e) => IdentityResult<T>.Fail(IdentityErrorKind.Validation, e.Field, e.Message);
 }

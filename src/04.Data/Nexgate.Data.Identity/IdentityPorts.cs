@@ -1,6 +1,7 @@
-using Nexgate.Modules.Identity.Domain;
+using Nexgate.Domain.Identity;
+using Nexgate.Service.Identity.Contracts;
 
-namespace Nexgate.Modules.Identity.Application;
+namespace Nexgate.Data.Identity;
 
 /// <summary>Cuenta encontrada por correo antes de autenticar (función restringida a una sola fila).</summary>
 public sealed record LoginRecord(Guid UserId, string PasswordHash, AccountStatus Status, bool PlatformOperator);
@@ -30,33 +31,6 @@ public interface IIdentityLookups
 
     Task<InvitationRecord?> FindInvitationAsync(byte[] tokenHash, CancellationToken cancellationToken);
 }
-
-public enum PasswordCheck
-{
-    Failed,
-    Success,
-    SuccessRehashNeeded
-}
-
-public interface IPasswordHashing
-{
-    string Hash(string password);
-
-    PasswordCheck Verify(string passwordHash, string password);
-
-    /// <summary>Verifica contra un hash ficticio, para que una cuenta inexistente tarde lo mismo que una existente.</summary>
-    void VerifyAgainstDummy(string password);
-}
-
-public sealed record AccessToken(string Value, DateTimeOffset ExpiresAt);
-
-public interface IAccessTokenIssuer
-{
-    AccessToken Issue(Guid userId, Guid? organizationId, Guid sessionId);
-}
-
-/// <summary>Duraciones configurables (sección <c>Identity:Tokens</c>).</summary>
-public sealed record IdentityLifetimes(TimeSpan RefreshSession, TimeSpan Invitation);
 
 /// <summary>Operaciones sobre cuentas, siempre en nombre del usuario indicado (RLS por usuario).</summary>
 public interface IAccountStore
@@ -116,13 +90,6 @@ public interface IInvitationStore
 
 public sealed record MemberRecord(Guid UserId, string Email, IReadOnlyList<RoleAssignment> RoleAssignments);
 
-public enum RemovalOutcome
-{
-    Removed,
-    NotFound,
-    LastAdministrator
-}
-
 /// <summary>Miembros de la organización activa de la solicitud.</summary>
 public interface IMemberStore
 {
@@ -139,8 +106,24 @@ public interface IMemberStore
     Task<RemovalOutcome> RevokeRoleAssignmentAsync(Guid userId, Guid assignmentId, DateTimeOffset now, CancellationToken cancellationToken);
 }
 
-/// <summary>Nombre de una organización donde el usuario es miembro (verificado por quien llama).</summary>
-public interface IOrganizationNames
+/// <summary>Consultas de la resolución de acceso de cada solicitud (pasan por RLS).</summary>
+public interface IAccessQueries
 {
-    Task<string?> GetNameAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken);
+    /// <summary>Asignaciones de rol del usuario en la organización activa, o null si no tiene membresía activa.</summary>
+    Task<IReadOnlyList<RoleAssignment>?> FindMembershipAssignmentsAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken);
+
+    /// <summary>El usuario es operador de plataforma con la cuenta activa.</summary>
+    Task<bool> IsPlatformOperatorAsync(Guid userId, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Referencias a datos de Tenancy que Identity verifica dentro de sus propias transacciones (organización y sitio de una
+/// invitación). Lo implementa la capa de servicio con los contratos de Tenancy: la persistencia no conoce otros
+/// módulos. Se resuelve en el alcance de la operación, así que pasa por RLS con la organización fijada.
+/// </summary>
+public interface IOrganizationReferences
+{
+    Task<bool> ActiveOrganizationExistsAsync(CancellationToken cancellationToken);
+
+    Task<bool> SiteExistsAsync(Guid siteId, CancellationToken cancellationToken);
 }

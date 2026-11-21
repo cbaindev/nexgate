@@ -22,14 +22,14 @@
 
 ## 3. Tenancy en capas
 
-- [ ] 3.1 Mover con `git mv` `Tenancy.Domain` → `05.Domain/Nexgate.Domain.Tenancy` y `Tenancy.Contracts` → `03.Service/Nexgate.Service.Tenancy.Contracts`, con namespaces `Nexgate.<Capa>.Tenancy`; agregar `ITimeZoneCatalog` a `Contracts` (D5); verificar `dotnet build`
-- [ ] 3.2 Crear `04.Data/Nexgate.Data.Tenancy` con `TenancyDbContext`, stores, migraciones (movidas con `git mv`, sin regenerar) y los puertos `IOrganizationStore` e `ISiteStore` (D3); verificar `dotnet build` y `dotnet ef migrations has-pending-model-changes` sin cambios pendientes
+- [x] 3.1 Mover con `git mv` `Tenancy.Domain` → `05.Domain/Nexgate.Domain.Tenancy` y `Tenancy.Contracts` → `03.Service/Nexgate.Service.Tenancy.Contracts`, con namespaces `Nexgate.<Capa>.Tenancy`; agregar `ITimeZoneCatalog` a `Contracts` (D5); verificar `dotnet build`
+- [x] 3.2 Crear `04.Data/Nexgate.Data.Tenancy` con `TenancyDbContext`, stores, migraciones (movidas con `git mv`, sin regenerar) y los puertos `IOrganizationStore` e `ISiteStore` (D3); verificar `dotnet build` y `dotnet ef migrations has-pending-model-changes` sin cambios pendientes
 - [ ] 3.3 Crear `03.Service/Nexgate.Service.Tenancy` con `OrganizationService`, `SiteService`, `TimeZones`, la implementación de `ITimeZoneCatalog`, `IOrganizationDirectory` e `ISiteDirectory`, todo `internal`, y `AddTenancyService()`; verificar `dotnet build` y que la base de pruebas creada desde cero tiene el schema `tenancy` con sus políticas RLS (`IsolationCatalogTests`)
 
 ## 4. Identity en capas
 
-- [ ] 4.1 Mover `Identity.Domain` → `05.Domain/Nexgate.Domain.Identity` y `Identity.Contracts` → `03.Service/Nexgate.Service.Identity.Contracts`; agregar `IPlatformOperators` a `Contracts` (D4); verificar `dotnet build`
-- [ ] 4.2 Crear `04.Data/Nexgate.Data.Identity` con `IdentityDbContext`, stores, `IdentityIsolationSql`, migraciones (con `git mv`, sin regenerar), los puertos y records de `IdentityPorts` y las consultas que usan la resolución de acceso y el operador de plataforma (D2, D3); verificar `dotnet build` y `has-pending-model-changes` sin cambios pendientes
+- [x] 4.1 Mover `Identity.Domain` → `05.Domain/Nexgate.Domain.Identity` y `Identity.Contracts` → `03.Service/Nexgate.Service.Identity.Contracts`; agregar `IPlatformOperators` a `Contracts` (D4); verificar `dotnet build`
+- [x] 4.2 Crear `04.Data/Nexgate.Data.Identity` con `IdentityDbContext`, stores, `IdentityIsolationSql`, migraciones (con `git mv`, sin regenerar), los puertos y records de `IdentityPorts` y las consultas que usan la resolución de acceso y el operador de plataforma (D2, D3); verificar `dotnet build` y `has-pending-model-changes` sin cambios pendientes
 - [ ] 4.3 Crear `03.Service/Nexgate.Service.Identity` con los servicios, `OrganizationNames`, `IdentityAccessResolver`, `IdentityPlatformAccess`, hash de contraseñas, emisión de JWT, clave de firma, opciones y su validador (con `Microsoft.Extensions.Identity.Core` y `Microsoft.IdentityModel.JsonWebTokens`, sin `Microsoft.AspNetCore.App`), y `AddIdentityService()`; verificar `dotnet build` y `IdentityUnitTests` movida a `Nexgate.Test.Api` en verde
 - [ ] 4.4 Mover a `Api.Rest/Extensions` la configuración de JWT bearer y de rate limiting (D8), y a `Api.Rest/Commands` los comandos `migrate` y `create-platform-operator` usando `IPlatformOperators`; verificar `dotnet run --project src/02.Api/Nexgate.Api.Rest -- migrate` contra la base de `docker compose` y la prueba del comando de operador
 

@@ -1,6 +1,6 @@
-using Nexgate.Modules.Identity.Contracts;
+using Nexgate.Service.Identity.Contracts;
 
-namespace Nexgate.Modules.Identity.Domain;
+namespace Nexgate.Domain.Identity;
 
 /// <summary>Una regla del dominio no se cumple. El campo usa el nombre de la propiedad pública.</summary>
 public sealed class DomainValidationException(string field, string message) : Exception(message)

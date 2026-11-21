@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Identity.Contracts\Nexgate.Service.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\05.Domain\Nexgate.Domain.Identity\Nexgate.Domain.Identity.csproj" />
+    <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>

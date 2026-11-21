@@ -1,6 +1,6 @@
-using Nexgate.Modules.Identity.Application;
+using Nexgate.Service.Identity.Contracts;
 
-namespace Nexgate.Host;
+namespace Nexgate.Api.Rest.Commands;
 
 /// <summary>Comandos administrativos del host. No exponen endpoints ni escriben datos personales en la salida.</summary>
 public static class AdminCommands
@@ -26,7 +26,7 @@ public static class AdminCommands
         }
 
         await using var scope = services.CreateAsyncScope();
-        var result = await scope.ServiceProvider.GetRequiredService<PlatformOperatorService>().EnsureAsync(email, password, CancellationToken.None);
+        var result = await scope.ServiceProvider.GetRequiredService<IPlatformOperators>().EnsureAsync(email, password, CancellationToken.None);
         if (result.Error is { } error)
         {
             await output.WriteLineAsync($"No se pudo crear el operador: {error.Message}");

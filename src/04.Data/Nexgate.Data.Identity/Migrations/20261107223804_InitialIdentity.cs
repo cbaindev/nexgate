@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Nexgate.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Persistence;
 
 #nullable disable
 
-namespace Nexgate.Modules.Identity.Infrastructure.Migrations
+namespace Nexgate.Data.Identity.Migrations
 {
     /// <inheritdoc />
     public partial class InitialIdentity : Migration

@@ -1,6 +1,6 @@
-using Nexgate.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Persistence;
 
-namespace Nexgate.Modules.Identity.Infrastructure;
+namespace Nexgate.Data.Identity;
 
 /// <summary>
 /// Políticas RLS y funciones restringidas del schema <c>identity</c> (design, decisiones 5 y 6). Las usa la migración
