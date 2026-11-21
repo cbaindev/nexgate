@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Nexgate.BuildingBlocks.Persistence;
-using Nexgate.BuildingBlocks.Tenancy;
-using Nexgate.Modules.Tenancy.Application;
-using Nexgate.Modules.Tenancy.Domain;
+using Nexgate.Common.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Tenancy;
+using Nexgate.Domain.Tenancy;
 
-namespace Nexgate.Modules.Tenancy.Infrastructure;
+namespace Nexgate.Data.Tenancy;
 
 /// <summary>Schema <c>tenancy</c>. Las políticas RLS están en la migración inicial (design, decisión 4).</summary>
 public sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> options, ICurrentOrganization currentOrganization)

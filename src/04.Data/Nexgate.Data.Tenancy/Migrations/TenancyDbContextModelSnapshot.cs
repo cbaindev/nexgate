@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Nexgate.Modules.Tenancy.Infrastructure;
+using Nexgate.Data.Tenancy;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Nexgate.Modules.Tenancy.Infrastructure.Migrations
+namespace Nexgate.Data.Tenancy.Migrations
 {
     [DbContext(typeof(TenancyDbContext))]
-    [Migration("20261107165833_InitialTenancy")]
-    partial class InitialTenancy
+    partial class TenancyDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,7 +23,7 @@ namespace Nexgate.Modules.Tenancy.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Nexgate.Modules.Tenancy.Domain.Organization", b =>
+            modelBuilder.Entity("Nexgate.Domain.Tenancy.Organization", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -53,7 +50,7 @@ namespace Nexgate.Modules.Tenancy.Infrastructure.Migrations
                     b.ToTable("organization", "tenancy");
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Tenancy.Domain.Site", b =>
+            modelBuilder.Entity("Nexgate.Domain.Tenancy.Site", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -104,9 +101,9 @@ namespace Nexgate.Modules.Tenancy.Infrastructure.Migrations
                     b.HasAnnotation("Nexgate:TenantOwned", true);
                 });
 
-            modelBuilder.Entity("Nexgate.Modules.Tenancy.Domain.Site", b =>
+            modelBuilder.Entity("Nexgate.Domain.Tenancy.Site", b =>
                 {
-                    b.HasOne("Nexgate.Modules.Tenancy.Domain.Organization", null)
+                    b.HasOne("Nexgate.Domain.Tenancy.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="NodaTime" Version="3.3.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\04.Data\Nexgate.Data.Tenancy\Nexgate.Data.Tenancy.csproj" />
+    <ProjectReference Include="..\..\05.Domain\Nexgate.Domain.Tenancy\Nexgate.Domain.Tenancy.csproj" />
+    <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>

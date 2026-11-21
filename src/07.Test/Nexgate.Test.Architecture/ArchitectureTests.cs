@@ -92,6 +92,8 @@ public class ArchitectureTests
     [InlineData("Service", "Domain")]
     [InlineData("Service", "Data")]
     [InlineData("Data", "Domain")]
+    [InlineData("Data", "Contracts")]
+    [InlineData("Domain", "Contracts")]
     public void Allowed_layer_dependencies_are_accepted(string from, string to)
     {
         Assert.Empty(ArchitectureRules.Violations(SameModule(from, to)));
@@ -100,10 +102,9 @@ public class ArchitectureTests
     [Theory]
     [InlineData("Domain", "Data")]
     [InlineData("Domain", "Service")]
-    [InlineData("Domain", "Contracts")]
     [InlineData("Data", "Service")]
-    [InlineData("Data", "Contracts")]
     [InlineData("Contracts", "Domain")]
+    [InlineData("Contracts", "Data")]
     [InlineData("Contracts", "Service")]
     public void Layer_dependencies_against_the_allowed_direction_are_rejected(string from, string to)
     {
@@ -183,6 +184,31 @@ public class ArchitectureTests
     }
 
     [Fact]
+    public void Another_module_cannot_use_the_persistence_of_a_module()
+    {
+        var projects = new[]
+        {
+            Module("Billing", "Service", refs: [Name("Access", "Data")]),
+            Module("Access", "Data"),
+        };
+
+        Assert.Contains(ArchitectureRules.Violations(projects), v => v.Contains("Nexgate.Service.Billing") && v.Contains("Nexgate.Data.Access"));
+    }
+
+    [Theory]
+    [InlineData("Service")]
+    [InlineData("Data")]
+    public void A_module_project_cannot_reference_the_web_framework(string layer)
+    {
+        var projects = new[]
+        {
+            new ProjectInfo(Name("Sample", layer), "Sample", layer, [], [], ["Microsoft.AspNetCore.App"]),
+        };
+
+        Assert.Contains(ArchitectureRules.Violations(projects), v => v.Contains("Microsoft.AspNetCore.App"));
+    }
+
+    [Fact]
     public void Domain_and_Contracts_cannot_use_external_packages_or_frameworks()
     {
         var projects = new[]
@@ -191,7 +217,10 @@ public class ArchitectureTests
             new ProjectInfo(Name("Sample", "Contracts"), "Sample", "Contracts", [], [], ["Microsoft.AspNetCore.App"]),
         };
 
-        Assert.Equal(2, ArchitectureRules.Violations(projects).Count);
+        var violations = ArchitectureRules.Violations(projects);
+
+        Assert.Contains(violations, v => v.Contains("Nexgate.Domain.Sample") && v.Contains("paquetes"));
+        Assert.Contains(violations, v => v.Contains("Nexgate.Service.Sample.Contracts") && v.Contains("paquetes"));
     }
 
     // ---- Controllers solo con contratos (D3) ----

@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Nexgate.BuildingBlocks.Persistence;
-using Nexgate.Modules.Tenancy.Application;
-using Nexgate.Modules.Tenancy.Contracts;
-using Nexgate.Modules.Tenancy.Domain;
+using Microsoft.Extensions.DependencyInjection;
+using Nexgate.Common.BuildingBlocks.Persistence;
+using Nexgate.Domain.Tenancy;
 using Npgsql;
 
-namespace Nexgate.Modules.Tenancy.Infrastructure;
+namespace Nexgate.Data.Tenancy;
 
 internal sealed class OrganizationStore(TenancyDbContext db) : IOrganizationStore
 {
@@ -24,20 +23,6 @@ internal sealed class OrganizationStore(TenancyDbContext db) : IOrganizationStor
         db.Organizations.AsNoTracking().SingleOrDefaultAsync(cancellationToken);
 }
 
-/// <summary>Organización activa para otros módulos (pasa por RLS).</summary>
-internal sealed class OrganizationDirectory(IOrganizationStore store) : IOrganizationDirectory
-{
-    public async Task<OrganizationDto?> GetActiveOrganizationAsync(CancellationToken cancellationToken) =>
-        await store.FindActiveAsync(cancellationToken) is { } organization ? OrganizationService.ToDto(organization) : null;
-}
-
-/// <summary>Sitios de la organización activa para otros módulos (pasa por RLS).</summary>
-internal sealed class SiteDirectory(TenancyDbContext db) : ISiteDirectory
-{
-    public Task<bool> ExistsAsync(Guid siteId, CancellationToken cancellationToken) =>
-        db.Sites.AnyAsync(s => s.Id == siteId, cancellationToken);
-}
-
 internal sealed class SiteStore(TenancyDbContext db) : ISiteStore
 {
     public async Task<IReadOnlyList<Site>> ListAsync(IReadOnlyCollection<Guid>? onlySites, CancellationToken cancellationToken)
@@ -51,6 +36,9 @@ internal sealed class SiteStore(TenancyDbContext db) : ISiteStore
 
         return await query.OrderBy(s => s.Name).ThenBy(s => s.Id).ToListAsync(cancellationToken);
     }
+
+    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken) =>
+        db.Sites.AnyAsync(s => s.Id == id, cancellationToken);
 
     public Task<Site?> FindAsync(Guid id, CancellationToken cancellationToken) =>
         db.Sites.SingleOrDefaultAsync(s => s.Id == id, cancellationToken);
@@ -78,5 +66,17 @@ internal sealed class SiteStore(TenancyDbContext db) : ISiteStore
         {
             return false;
         }
+    }
+}
+
+public static class TenancyDataServiceCollectionExtensions
+{
+    /// <summary>Persistencia de Tenancy (schema <c>tenancy</c>). La registra <c>AddTenancyService</c>.</summary>
+    public static IServiceCollection AddTenancyData(this IServiceCollection services)
+    {
+        services.AddModuleDbContext<TenancyDbContext>(TenancyDbContext.Schema);
+        services.AddScoped<IOrganizationStore, OrganizationStore>();
+        services.AddScoped<ISiteStore, SiteStore>();
+        return services;
     }
 }

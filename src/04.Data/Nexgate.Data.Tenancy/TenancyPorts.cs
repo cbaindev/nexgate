@@ -1,6 +1,6 @@
-using Nexgate.Modules.Tenancy.Domain;
+using Nexgate.Domain.Tenancy;
 
-namespace Nexgate.Modules.Tenancy.Application;
+namespace Nexgate.Data.Tenancy;
 
 /// <summary>Persistencia de organizaciones. Toda lectura está acotada a la organización activa.</summary>
 public interface IOrganizationStore
@@ -17,6 +17,8 @@ public interface ISiteStore
 {
     /// <summary>Sitios de la organización activa; con <paramref name="onlySites"/>, solo esos (alcance de sitio).</summary>
     Task<IReadOnlyList<Site>> ListAsync(IReadOnlyCollection<Guid>? onlySites, CancellationToken cancellationToken);
+
+    Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 
     Task<Site?> FindAsync(Guid id, CancellationToken cancellationToken);
 

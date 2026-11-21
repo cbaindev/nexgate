@@ -2,8 +2,10 @@ namespace Nexgate.Test.Architecture;
 
 /// <summary>
 /// Reglas de dependencia entre proyectos (ver docs/05-arquitectura-tecnica.md y la decisión D-32).
-/// Sentido permitido: Api → Service → Data → Domain, con Common disponible para todos. Entre módulos, solo
-/// Nexgate.Service.&lt;Modulo&gt;.Contracts. Devuelve una lista de violaciones legibles; vacía si todo está bien.
+/// Sentido permitido: Api → Service → Data → Domain, con Common disponible para Service y Data. Cualquier capa puede
+/// usar el Contracts de su propio módulo; entre módulos, solo Service → Nexgate.Service.&lt;Otro&gt;.Contracts. La
+/// persistencia (Data) solo la usa el servicio de su módulo (y 02.Api para componer). Ningún proyecto de módulo usa
+/// el framework web. Devuelve una lista de violaciones legibles; vacía si todo está bien.
 /// </summary>
 public static class ArchitectureRules
 {
@@ -30,6 +32,12 @@ public static class ArchitectureRules
                 && (project.FrameworkReferences.Count > 0 || project.PackageReferences.Count > 0))
             {
                 violations.Add($"{project.Name} ({project.Layer}) no puede referenciar frameworks ni paquetes externos.");
+            }
+
+            // Los endpoints, la autenticación HTTP y el rate limiting viven solo en 02.Api.
+            if (project.IsModuleProject && project.FrameworkReferences.Contains(AspNetCoreFramework))
+            {
+                violations.Add($"{project.Name} ({project.Layer}) no puede referenciar {AspNetCoreFramework}: solo 02.Api usa el framework web.");
             }
 
             // Common no depende del framework web: lo usan también los workers y los proyectos de módulo.
@@ -88,12 +96,13 @@ public static class ArchitectureRules
             : $"{project.Name} ({project.Layer}) no puede depender de {reference.Name} ({reference.Layer}).";
     }
 
-    /// <summary>Capas del mismo módulo que cada capa puede referenciar.</summary>
+    /// <summary>Capas del mismo módulo que cada capa puede referenciar (Data solo desde Service).</summary>
     private static string[] AllowedSameModule(string layer) => layer switch
     {
         "Service" => ["Contracts", "Domain", "Data"],
-        "Data" => ["Domain"],
-        _ => [] // Domain y Contracts no dependen de nada.
+        "Data" => ["Domain", "Contracts"],
+        "Domain" => ["Contracts"],
+        _ => [] // Contracts no depende de nada.
     };
 
     private static bool IsCommon(string projectName) => projectName.StartsWith("Nexgate.Common.", StringComparison.Ordinal);

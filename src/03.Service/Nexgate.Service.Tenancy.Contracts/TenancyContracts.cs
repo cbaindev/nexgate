@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Nexgate.Modules.Tenancy.Contracts;
+namespace Nexgate.Service.Tenancy.Contracts;
 
 /// <summary>Organización tal como la ven la API y los demás módulos. No contiene datos personales.</summary>
 public sealed record OrganizationDto(Guid Id, string Name, string Status);

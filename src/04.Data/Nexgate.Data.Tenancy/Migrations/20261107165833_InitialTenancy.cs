@@ -1,10 +1,10 @@
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Nexgate.BuildingBlocks.Persistence;
+using Nexgate.Common.BuildingBlocks.Persistence;
 
 #nullable disable
 
-namespace Nexgate.Modules.Tenancy.Infrastructure.Migrations
+namespace Nexgate.Data.Tenancy.Migrations
 {
     /// <inheritdoc />
     public partial class InitialTenancy : Migration

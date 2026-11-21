@@ -1,4 +1,4 @@
-namespace Nexgate.Modules.Tenancy.Domain;
+namespace Nexgate.Domain.Tenancy;
 
 public enum SiteType
 {

@@ -1,4 +1,4 @@
-namespace Nexgate.Modules.Tenancy.Domain;
+namespace Nexgate.Domain.Tenancy;
 
 /// <summary>Una regla del dominio no se cumple. El campo usa el nombre de la propiedad pública.</summary>
 public sealed class DomainValidationException(string field, string message) : Exception(message)

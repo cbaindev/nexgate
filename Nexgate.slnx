@@ -7,10 +7,15 @@
   <Folder Name="/03.Service/">
     <Project Path="src/03.Service/Nexgate.Service.Sample.Contracts/Nexgate.Service.Sample.Contracts.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Sample/Nexgate.Service.Sample.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Tenancy.Contracts/Nexgate.Service.Tenancy.Contracts.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Tenancy/Nexgate.Service.Tenancy.csproj" />
   </Folder>
-  <Folder Name="/04.Data/" />
+  <Folder Name="/04.Data/">
+    <Project Path="src/04.Data/Nexgate.Data.Tenancy/Nexgate.Data.Tenancy.csproj" />
+  </Folder>
   <Folder Name="/05.Domain/">
     <Project Path="src/05.Domain/Nexgate.Domain.Sample/Nexgate.Domain.Sample.csproj" />
+    <Project Path="src/05.Domain/Nexgate.Domain.Tenancy/Nexgate.Domain.Tenancy.csproj" />
   </Folder>
   <Folder Name="/06.Common/">
     <Project Path="src/06.Common/Nexgate.Common.BuildingBlocks/Nexgate.Common.BuildingBlocks.csproj" />
