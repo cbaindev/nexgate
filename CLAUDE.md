@@ -9,6 +9,7 @@ Plataforma multitenant de control de acceso físico (edificios primero; countrie
 - `openspec/specs/`: comportamiento acordado del sistema (fuente de verdad).
 - `openspec/changes/`: cambios en curso, cada uno con proposal, specs, design y tasks.
 - `src/`: capas numeradas al estilo SMT (D-32): `02.Api` (API con controllers y workers), `03.Service` (`Nexgate.Service.<Modulo>` y su `.Contracts`), `04.Data`, `05.Domain`, `06.Common`, `07.Test`. Un proyecto por módulo dentro de cada capa.
+- `api/nexgate-v1.openapi.json`: contrato OpenAPI de la API (D-34). Si un cambio lo modifica, `dotnet test` falla hasta regenerarlo con `NEXGATE_UPDATE_OPENAPI=1`.
 
 ## Cómo trabajamos
 

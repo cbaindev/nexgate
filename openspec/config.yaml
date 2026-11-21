@@ -15,8 +15,11 @@ context: |
   # Stack
   - Backend: .NET (LTS vigente) como monolito modular. Un schema de PostgreSQL por módulo, una sola base.
   - Estructura (D-32): capas numeradas al estilo SMT en src/ (02.Api, 03.Service, 04.Data, 05.Domain, 06.Common, 07.Test),
-    un proyecto por módulo en cada capa, dependencias Api → Service → Data → Domain.
+    un proyecto por módulo en cada capa, dependencias Api → Service → Data → Domain. Cualquier capa usa el Contracts de su
+    módulo; entre módulos solo Service → Service.<Otro>.Contracts; Data solo lo usa el servicio de su módulo.
   - API (D-33): REST con controllers [ApiController] en Nexgate.Api.Rest/Controllers/<Modulo>, versionada por URL (api/v1).
+    Toda acción declara su requisito de acceso con un atributo; los modelos de solicitud viven en Nexgate.Api.Rest/Models.
+  - Contrato (D-34): documento OpenAPI versionado en api/nexgate-v1.openapi.json y verificado por las pruebas.
   - Base de datos: PostgreSQL con Row-Level Security por organización.
   - Frontend: React + TypeScript (Vite, TanStack Query). Un solo panel con vistas por rol, PWA para residentes.
   - Dispositivos: ESP32 con firmware propio, MQTT sobre TLS, política compilada y firmada, funcionamiento offline.
