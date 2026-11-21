@@ -66,6 +66,7 @@ Registro de decisiones tomadas durante la fase de definición (2026-11-06). Cada
 | D-31 | Retrofit: aceptar los controles RF 433 MHz existentes para migrar gradualmente, empujando después a credenciales seguras (BLE, NFC, QR dinámico). |
 | D-32 | Estructura de la solución en **capas numeradas al estilo SMT** (`01.Client`, `02.Api`, `03.Service`, `04.Data`, `05.Domain`, `06.Common`, `07.Test`) con **un proyecto por módulo dentro de cada capa** (`Nexgate.Service.<Modulo>`, `Nexgate.Service.<Modulo>.Contracts`, `Nexgate.Data.<Modulo>`, `Nexgate.Domain.<Modulo>`). Sentido de dependencias `Api → Service → Data → Domain`, con `Common` para todos; entre módulos, solo por `Contracts`. Mantiene D-27. |
 | D-33 | API REST con **controllers** (`[ApiController]`) en `Nexgate.Api.Rest/Controllers/<Modulo>`, versionada por segmento de URL (`api/v{version}`), en lugar de Minimal API. Los controllers solo usan los contratos públicos de los módulos. |
+| D-34 | El contrato entre el frontend y el backend es el **documento OpenAPI** de la API, versionado en el repositorio y verificado por las pruebas. El frontend se comunica a través de un cliente o proxy generado desde ese documento. (En `add-openapi-contract` figura como D-32; se renumeró al integrar las ramas en `integrate-modules-into-layers`.) |
 
 ## Preguntas abiertas
 

@@ -58,22 +58,35 @@ Un otorgamiento al **Hall** cubre solo el portón y la puerta del hall, no los p
 
 Cada módulo tiene su propio **schema** de PostgreSQL. Todas las tablas de los módulos con datos de negocio llevan `organizacion_id` (y `sitio_id` cuando corresponde), con RLS por tenant.
 
-### Tenancy
+Los nombres de tablas y columnas de este documento están en español como referencia conceptual. En la base se usan en inglés, según la regla de identificadores del proyecto: `organizacion_id` es `organization_id`, `sitio_id` es `site_id`, y así con el resto. Los módulos ya implementados muestran sus nombres reales.
+
+### Tenancy (implementado)
+
+Schema `tenancy`.
 
 | Tabla | Campos principales |
 |---|---|
-| `organizacion` | id, nombre, estado, plan |
-| `sitio` | id, organizacion_id, tipo (edificio, country, empresa, casa), nombre, zona_horaria, configuracion (jsonb) |
+| `organization` | id, name, status (active), created_at. El plan comercial queda para un cambio posterior. |
+| `site` | id, organization_id, type (building, gated_community, company, house), name (único por organización sin distinguir mayúsculas), time_zone (IANA), configuration (jsonb), created_at, updated_at |
 
-### Identity
+`site` tiene la política RLS estándar por `organization_id`. `organization` tiene políticas propias: se lee y modifica solo la organización activa, y solo se crea en una operación de plataforma. Ver `openspec/specs/tenant-isolation`.
+
+### Identity (implementado)
+
+Schema `identity`.
 
 | Tabla | Campos principales |
 |---|---|
-| `usuario` | id, email, estado, sujeto_ref (opcional) |
-| `membresia_organizacion` | usuario_id, organizacion_id |
-| `asignacion_rol` | usuario_id, rol, alcance_tipo (organizacion, sitio, espacio), alcance_id, desde, hasta |
+| `user_account` | id, email, normalized_email (único), password_hash, status (active, disabled), platform_operator, created_at. El vínculo con el Sujeto (`sujeto_ref`) llega con `add-people-registry`. |
+| `membership` | id, organization_id, user_id (único por organización), created_at |
+| `role_assignment` | id, organization_id, user_id, role (administrator, guard, resident, employee), scope_type (organization, site), scope_id, valid_from, valid_until, created_at |
+| `invitation` | id, organization_id, normalized_email, role, scope_type, scope_id, token_hash, expires_at, accepted_at, accepted_by, created_by, created_at |
+| `refresh_session` | id, user_id, active_organization_id, created_at, expires_at, revoked_at |
+| `refresh_token` | id, session_id, user_id, token_hash, created_at, used_at |
 
-Roles base: `PlatformAdmin`, `OrgAdmin`, `SiteAdmin`, `Guard`, `Owner` (titular con derecho a invitar), `Member`.
+`membership`, `role_assignment` e `invitation` tienen la política RLS estándar por `organization_id`; `membership` además deja ver al usuario sus propias membresías. `user_account`, `refresh_session` y `refresh_token` tienen RLS aislado por usuario: una cuenta sirve para varias organizaciones (D-04). Las búsquedas previas a la autenticación usan funciones `SECURITY DEFINER` acotadas. Los tokens se guardan solo como hash. Ver `openspec/specs/tenant-isolation` y `openspec/specs/authentication`.
+
+El alcance por espacio (`scope_type` = space) llega con `add-spaces-and-access-points`. El operador de plataforma es una marca de la cuenta, no un rol de organización.
 
 ### People (padrón global, fuera de RLS)
 
