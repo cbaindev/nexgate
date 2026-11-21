@@ -28,7 +28,7 @@ public static class ApiVersioningExtensions
             }
         });
         // El 400 automático de [ApiController] se escribe como cualquier otro error (problem details con code y
-        // correlationId), sin depender de los formateadores de MVC.
+        // correlationId), sin depender de los formateadores de los controllers.
         services.Configure<ApiBehaviorOptions>(options => options.InvalidModelStateResponseFactory = context =>
             new ResultActionResult(Results.ValidationProblem(
                 context.ModelState

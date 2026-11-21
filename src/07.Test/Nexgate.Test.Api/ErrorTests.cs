@@ -92,7 +92,7 @@ public class ErrorTests
     [Fact]
     public async Task Malformed_json_without_a_token_on_a_protected_endpoint_returns_401()
     {
-        // MVC evalúa la autorización antes de leer el cuerpo (design de integrate-modules-into-layers, Risks).
+        // Los controllers evalúan la autorización antes de leer el cuerpo (design de integrate-modules-into-layers, Risks).
         using var factory = new NexgateFactory();
         using var client = factory.CreateClient();
 

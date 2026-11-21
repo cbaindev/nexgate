@@ -138,7 +138,7 @@ public static class AccessProblems
         extensions: new Dictionary<string, object?> { ["code"] = code });
 }
 
-/// <summary>Ejecuta un <see cref="IResult"/> desde un filtro de MVC (mismo formato que las acciones).</summary>
+/// <summary>Ejecuta un <see cref="IResult"/> desde un filtro de los controllers (mismo formato que las acciones).</summary>
 public sealed class ResultActionResult(IResult result) : IActionResult
 {
     public Task ExecuteResultAsync(ActionContext context) => result.ExecuteAsync(context.HttpContext);

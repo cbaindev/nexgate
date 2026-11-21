@@ -3,7 +3,7 @@ using Nexgate.Service.Identity.Contracts;
 
 namespace Nexgate.Api.Rest.Models.Identity;
 
-// Los atributos de validación van sobre los parámetros del constructor: MVC los lee de ahí en los records.
+// Los atributos de validación van sobre los parámetros del constructor: los controllers de ASP.NET Core los leen de ahí en los records.
 
 public sealed record SignInRequest(string? Email, string? Password, Guid? OrganizationId);
 

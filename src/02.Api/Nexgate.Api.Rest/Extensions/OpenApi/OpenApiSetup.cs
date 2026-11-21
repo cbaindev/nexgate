@@ -106,7 +106,7 @@ public static class OpenApiSetup
     }
 
     /// <summary>
-    /// En los modelos de solicitud (records), MVC exige los atributos de validación sobre los parámetros del constructor,
+    /// En los modelos de solicitud (records), los controllers de ASP.NET Core exigen los atributos de validación sobre los parámetros del constructor,
     /// pero el generador del documento solo los lee de las propiedades. Se copian los límites de longitud del parámetro
     /// asociado a cada propiedad, para que el contrato los declare igual.
     /// </summary>
@@ -148,7 +148,7 @@ public static class OpenApiSetup
 
     /// <summary>
     /// El contrato declara los cuerpos de entrada solo como <c>application/json</c>, que es lo que envían los clientes
-    /// generados. El formateador de MVC además acepta <c>text/json</c> y <c>application/*+json</c>; no se anuncian para
+    /// generados. El formateador de entrada de los controllers además acepta <c>text/json</c> y <c>application/*+json</c>; no se anuncian para
     /// que el contrato no dependa del formateador.
     /// </summary>
     private static Task JsonRequestBody(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken _)

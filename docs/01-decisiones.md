@@ -61,7 +61,7 @@ Registro de decisiones tomadas durante la fase de definición (2026-11-06). Cada
 |---|---|
 | D-27 | Backend **.NET** como **monolito modular** con un esquema de PostgreSQL por módulo, una sola base de datos y comunicación entre módulos por contratos y eventos (outbox). |
 | D-28 | Base de datos única **PostgreSQL** con Row-Level Security por tenant. |
-| D-29 | Frontend **React + TypeScript**, panel único y PWA para residentes. |
+| D-29 | Frontend **React + TypeScript**: toda la aplicación web es una sola **SPA progresiva (PWA)**, instalable, con vistas según rol (D-05), que consume la API REST. El backend no genera HTML: solo expone la API REST con controllers (D-33). |
 | D-30 | Dispositivos **ESP32** con firmware propio. ESPHome solo para prototipos. Comunicación MQTT sobre TLS. |
 | D-31 | Retrofit: aceptar los controles RF 433 MHz existentes para migrar gradualmente, empujando después a credenciales seguras (BLE, NFC, QR dinámico). |
 | D-32 | Estructura de la solución en **capas numeradas al estilo SMT** (`01.Client`, `02.Api`, `03.Service`, `04.Data`, `05.Domain`, `06.Common`, `07.Test`) con **un proyecto por módulo dentro de cada capa** (`Nexgate.Service.<Modulo>`, `Nexgate.Service.<Modulo>.Contracts`, `Nexgate.Data.<Modulo>`, `Nexgate.Domain.<Modulo>`). Sentido de dependencias `Api → Service → Data → Domain`, con `Common` para todos; entre módulos, solo por `Contracts`. Mantiene D-27. |

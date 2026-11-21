@@ -5,8 +5,7 @@
 ```mermaid
 flowchart LR
     subgraph Cliente
-      WEB[Panel web React\nadmin, guardia, residente]
-      PWA[PWA residente]
+      WEB[SPA progresiva React - PWA\nadmin, guardia, residente, empleado]
     end
     subgraph Nube
       API[Nexgate.Api.Rest\nAPI REST + SignalR]
@@ -18,8 +17,7 @@ flowchart LR
     subgraph Edificio
       DEV[Controlador ESP32\npor puerta]
     end
-    WEB --> API
-    PWA --> API
+    WEB -->|REST JSON + SignalR| API
     API --> DB
     WRK --> DB
     WRK <--> BRK
@@ -108,7 +106,7 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
 ## API y tiempo real
 
 - **REST** con controllers (`[ApiController]`, D-33), versionado por segmento de URL (`api/v{version}`) y OpenAPI. El contrato es el documento OpenAPI 3.1 versionado en `api/nexgate-v1.openapi.json` (D-34); el frontend genera desde ahí su cliente o proxy TypeScript, sin levantar el backend.
-  - Lo genera el generador oficial de .NET (`Microsoft.AspNetCore.OpenApi`) a partir del explorador de la API de MVC y de los atributos de cada acción: nombre de operación estable, resumen en español, esquemas, todas las respuestas de error (formato estándar con `code` y `correlationId`) y el requisito de token.
+  - Lo genera el generador oficial de .NET (`Microsoft.AspNetCore.OpenApi`) a partir de los controllers de la API REST (explorador de API de ASP.NET Core) y de los atributos de cada acción: nombre de operación estable, resumen en español, esquemas, todas las respuestas de error (formato estándar con `code` y `correlationId`) y el requisito de token.
   - Una prueba compara el documento generado con el versionado, y otra verifica que toda respuesta producida por las pruebas de integración esté declarada.
   - Swagger UI (`/swagger`) y el documento (`/openapi/v1.json`) se sirven solo en `Development`.
 - **SignalR** para estado de puertas, eventos en vivo y novedades, con un grupo por sitio.
@@ -127,11 +125,11 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
 ## Frontend
 
 - **React + TypeScript**, Vite, TanStack Query, React Router.
-- Una sola aplicación con navegación y pantallas por permiso:
+- Toda la aplicación web es una sola **SPA progresiva (PWA)**: se instala en el celular o la computadora, carga sin recargar páginas y consume solo la API REST (el backend no renderiza HTML). Navegación y pantallas por permiso:
   - **Administrador:** sitios, espacios, puertas, dispositivos, unidades, residentes, reglas, novedades, reportes.
   - **Guardia:** eventos en vivo, aperturas, visitas, accesos temporales.
   - **Residente o empleado:** mi unidad, mis invitados y libreta, mis accesos, historial.
-- **PWA** para residentes (invitar en segundos, mostrar QR). App nativa más adelante si se necesita BLE.
+- Como PWA, funciona igual para todos los roles; para residentes prioriza lo rápido desde el celular (invitar en segundos, mostrar QR). App nativa más adelante si se necesita BLE.
 - i18n desde el inicio (interfaz en español).
 - Biblioteca de componentes a elegir (MUI o shadcn/ui con Tailwind).
 
@@ -167,7 +165,7 @@ nexgate/
   api/                                contrato OpenAPI versionado (D-34)
   docs/
   src/                                capas numeradas (D-32)
-    01.Client/                        React + TypeScript (llega con add-admin-panel-shell)
+    01.Client/                        SPA progresiva React + TypeScript (llega con add-admin-panel-shell)
     02.Api/
       Nexgate.Api.Rest/               composición, controllers, middlewares, SignalR
       Nexgate.Api.Workers/            MQTT bridge, compilador, outbox, retención

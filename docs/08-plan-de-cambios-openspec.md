@@ -41,7 +41,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | 4 | `add-spaces-and-access-points` | `spaces/space-tree`, `spaces/access-points` | D-06 |
 | 5 | `add-access-evaluator` | `access/grants`, `access/access-evaluation`, `access/policy-compilation` (con vectores de prueba compartidos con el firmware) | D-13 |
 | 6 | `add-device-sync-protocol` | `devices/device-provisioning`, `devices/policy-sync`, `events/event-ingestion` | D-30 |
-| 7 | `add-admin-panel-shell` | `web/admin-shell` | D-05, D-29 |
+| 7 | `add-admin-panel-shell` (base de la SPA progresiva: instalación, navegación por rol y cliente generado del contrato) | `web/admin-shell` | D-05, D-29 |
 
 > Pendiente para `add-spaces-and-access-points`: agregar el alcance por espacio a `role-scopes` (hoy solo hay organización y sitio), con su validación contra el árbol de espacios, y declarar los endpoints nuevos en el contrato OpenAPI (`api/nexgate-v1.openapi.json`).
 
@@ -60,7 +60,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | 16 | `add-privacy-and-retention` | `privacy/retention`, `privacy/subject-rights`, `privacy/guest-data-visibility` | D-24, D-26 |
 | 17 | `add-device-ota-and-health` | `devices/ota`, `devices/health` | D-30 |
 | 18 | `add-rf-retrofit` | `devices/rf-import` | D-31 |
-| 19 | `add-resident-pwa` | `web/resident-app` | D-29 |
+| 19 | `add-resident-pwa` (vistas de residente dentro de la misma SPA progresiva) | `web/resident-app` | D-29 |
 
 ### Fase 3: madurez y expansión
 

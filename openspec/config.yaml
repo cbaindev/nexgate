@@ -21,7 +21,8 @@ context: |
     Toda acción declara su requisito de acceso con un atributo; los modelos de solicitud viven en Nexgate.Api.Rest/Models.
   - Contrato (D-34): documento OpenAPI versionado en api/nexgate-v1.openapi.json y verificado por las pruebas.
   - Base de datos: PostgreSQL con Row-Level Security por organización.
-  - Frontend: React + TypeScript (Vite, TanStack Query). Un solo panel con vistas por rol, PWA para residentes.
+  - Frontend (D-29): toda la aplicación web es una sola SPA progresiva (PWA) en React + TypeScript (Vite, TanStack Query),
+    con vistas por rol. El backend no renderiza HTML: solo expone la API REST.
   - Dispositivos: ESP32 con firmware propio, MQTT sobre TLS, política compilada y firmada, funcionamiento offline.
   - Módulos: Tenancy, Identity, People, Spaces, Occupancy, Access, Devices, Events, Notifications, Admin.
 
