@@ -1,5 +1,6 @@
 using Nexgate.Api.Rest.Commands;
 using Nexgate.Api.Rest.Extensions;
+using Nexgate.Api.Rest.Extensions.OpenApi;
 using Nexgate.Common.BuildingBlocks.Persistence;
 using Nexgate.Common.BuildingBlocks.Health;
 using Nexgate.Common.BuildingBlocks.Telemetry;
@@ -20,6 +21,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: [HealthEndpoints.ReadyTag]);
 
 builder.Services.AddNexgateControllers();
+builder.Services.AddNexgateOpenApi();
 builder.Services.AddModules();
 
 var app = builder.Build();
@@ -44,6 +46,7 @@ if (args.Contains(AdminCommands.CreatePlatformOperator))
 
 app.UseNexgatePipeline();
 app.MapNexgateHealth();
+app.MapNexgateApiReference();
 
 // Todos los endpoints de negocio son controllers bajo el prefijo de versión (api/v{version}).
 app.MapControllers();

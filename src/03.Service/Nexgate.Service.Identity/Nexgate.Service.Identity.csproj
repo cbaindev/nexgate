@@ -8,6 +8,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Nexgate.Test.Api" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Nexgate.Service.Identity.Contracts\Nexgate.Service.Identity.Contracts.csproj" />
     <ProjectReference Include="..\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
     <ProjectReference Include="..\..\04.Data\Nexgate.Data.Identity\Nexgate.Data.Identity.csproj" />

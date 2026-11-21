@@ -5,8 +5,6 @@
     <Project Path="src/02.Api/Nexgate.Api.Workers/Nexgate.Api.Workers.csproj" />
   </Folder>
   <Folder Name="/03.Service/">
-    <Project Path="src/03.Service/Nexgate.Service.Sample.Contracts/Nexgate.Service.Sample.Contracts.csproj" />
-    <Project Path="src/03.Service/Nexgate.Service.Sample/Nexgate.Service.Sample.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Identity.Contracts/Nexgate.Service.Identity.Contracts.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Identity/Nexgate.Service.Identity.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Tenancy.Contracts/Nexgate.Service.Tenancy.Contracts.csproj" />
@@ -17,7 +15,6 @@
     <Project Path="src/04.Data/Nexgate.Data.Tenancy/Nexgate.Data.Tenancy.csproj" />
   </Folder>
   <Folder Name="/05.Domain/">
-    <Project Path="src/05.Domain/Nexgate.Domain.Sample/Nexgate.Domain.Sample.csproj" />
     <Project Path="src/05.Domain/Nexgate.Domain.Identity/Nexgate.Domain.Identity.csproj" />
     <Project Path="src/05.Domain/Nexgate.Domain.Tenancy/Nexgate.Domain.Tenancy.csproj" />
   </Folder>

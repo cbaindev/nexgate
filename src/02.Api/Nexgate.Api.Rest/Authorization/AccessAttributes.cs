@@ -36,7 +36,7 @@ public sealed class RequireAuthenticatedUserAttribute : AccessRequirementAttribu
     {
         if (Context(context).UserId is null)
         {
-            context.Result = AccessProblems.AuthenticationRequired();
+            context.Result = new ResultActionResult(AccessProblems.AuthenticationRequired());
         }
 
         return Task.CompletedTask;
@@ -62,11 +62,11 @@ public sealed class RequirePermissionAttribute(string permission) : AccessRequir
         var request = Context(context);
         if (request.UserId is null)
         {
-            context.Result = AccessProblems.AuthenticationRequired();
+            context.Result = new ResultActionResult(AccessProblems.AuthenticationRequired());
         }
         else if (request.OrganizationId is null)
         {
-            context.Result = AccessProblems.OrganizationContextRequired();
+            context.Result = new ResultActionResult(AccessProblems.OrganizationContextRequired());
         }
         else
         {
@@ -74,7 +74,7 @@ public sealed class RequirePermissionAttribute(string permission) : AccessRequir
             var allowed = AtOrganization ? permissions.HasAtOrganization(Permission) : permissions.Has(Permission);
             if (!allowed)
             {
-                context.Result = AccessProblems.PermissionDenied();
+                context.Result = new ResultActionResult(AccessProblems.PermissionDenied());
             }
         }
 
@@ -91,14 +91,14 @@ public sealed class RequirePlatformOperatorAttribute : AccessRequirementAttribut
     {
         if (Context(context).UserId is null)
         {
-            context.Result = AccessProblems.AuthenticationRequired();
+            context.Result = new ResultActionResult(AccessProblems.AuthenticationRequired());
             return;
         }
 
         var platform = context.HttpContext.RequestServices.GetService<IPlatformAccess>();
         if (platform is null || !await platform.IsPlatformOperatorAsync(context.HttpContext.RequestAborted))
         {
-            context.Result = AccessProblems.PermissionDenied();
+            context.Result = new ResultActionResult(AccessProblems.PermissionDenied());
         }
     }
 }
@@ -123,19 +123,19 @@ public sealed class AnonymousAccessAttribute : AccessRequirementAttribute
 /// <summary>Respuestas de acceso denegado con el formato estándar de errores.</summary>
 public static class AccessProblems
 {
-    public static IActionResult AuthenticationRequired() => Problem(
+    public static IResult AuthenticationRequired() => Problem(
         StatusCodes.Status401Unauthorized, "Se requiere autenticación", AccessErrorCodes.AuthenticationRequired);
 
-    public static IActionResult OrganizationContextRequired() => Problem(
+    public static IResult OrganizationContextRequired() => Problem(
         StatusCodes.Status403Forbidden, "Se requiere una organización activa", AccessErrorCodes.OrganizationContextRequired);
 
-    public static IActionResult PermissionDenied() => Problem(
+    public static IResult PermissionDenied() => Problem(
         StatusCodes.Status403Forbidden, "No tiene permiso para esta operación", AccessErrorCodes.PermissionDenied);
 
-    private static IActionResult Problem(int status, string title, string code) => new ResultActionResult(Results.Problem(
+    private static IResult Problem(int status, string title, string code) => Results.Problem(
         statusCode: status,
         title: title,
-        extensions: new Dictionary<string, object?> { ["code"] = code }));
+        extensions: new Dictionary<string, object?> { ["code"] = code });
 }
 
 /// <summary>Ejecuta un <see cref="IResult"/> desde un filtro de MVC (mismo formato que las acciones).</summary>

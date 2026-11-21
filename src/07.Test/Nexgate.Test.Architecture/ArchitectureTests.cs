@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Nexgate.Api.Rest.Authorization;
 using Nexgate.Api.Rest.Extensions;
 
 namespace Nexgate.Test.Architecture;
@@ -15,9 +16,13 @@ public class ArchitectureTests
         Assert.Contains(projects, p => p.Name == "Nexgate.Api.Rest");
         Assert.Contains(projects, p => p.Name == "Nexgate.Api.Workers");
         Assert.Contains(projects, p => p.Name == "Nexgate.Common.BuildingBlocks");
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Contracts" });
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Service" });
-        Assert.Contains(projects, p => p is { Module: "Sample", Layer: "Domain" });
+        foreach (var module in new[] { "Tenancy", "Identity" })
+        {
+            foreach (var layer in new[] { "Contracts", "Service", "Data", "Domain" })
+            {
+                Assert.Contains(projects, p => p.Module == module && p.Layer == layer);
+            }
+        }
         Assert.DoesNotContain(projects, p => p.Name.StartsWith("Nexgate.Test.", StringComparison.Ordinal));
     }
 
@@ -246,6 +251,40 @@ public class ArchitectureTests
     }
 
     [Fact]
+    public void A_controller_using_the_api_request_models_is_accepted()
+    {
+        Assert.Empty(ControllerRules.Violations([typeof(Nexgate.Api.Rest.Controllers.Tenancy.SitesController)]));
+    }
+
+    // ---- Requisito de acceso en toda acción (D6) ----
+
+    [Fact]
+    public void Every_api_action_declares_exactly_one_access_requirement()
+    {
+        var controllers = ControllerRules.ControllersIn(typeof(ModuleExtensions).Assembly).ToList();
+
+        var violations = ControllerRules.AccessViolations(controllers, typeof(AccessRequirementAttribute));
+        Assert.True(violations.Count == 0, "Violaciones de arquitectura:\n" + string.Join("\n", violations));
+    }
+
+    [Fact]
+    public void An_action_without_access_requirement_is_rejected()
+    {
+        var violations = ControllerRules.AccessViolations([typeof(ControllerWithoutAccess)], typeof(AccessRequirementAttribute));
+
+        Assert.Contains(violations, v => v.Contains("ControllerWithoutAccess.Get") && v.Contains("0 requisitos"));
+        Assert.DoesNotContain(violations, v => v.Contains("ControllerWithoutAccess.Anonymous"));
+    }
+
+    [Fact]
+    public void An_action_with_two_access_requirements_is_rejected()
+    {
+        var violations = ControllerRules.AccessViolations([typeof(ControllerWithTwoAccessRequirements)], typeof(AccessRequirementAttribute));
+
+        Assert.Contains(violations, v => v.Contains("2 requisitos"));
+    }
+
+    [Fact]
     public void A_controller_using_only_framework_types_is_accepted()
     {
         Assert.Empty(ControllerRules.Violations([typeof(ControllerUsingFrameworkTypes)]));
@@ -279,6 +318,23 @@ public sealed class ControllerUsingInternals(InternalModuleType dependency) : Co
 {
     public Task<ActionResult<InternalModuleType>> Get(InternalModuleType input) =>
         Task.FromResult<ActionResult<InternalModuleType>>(input ?? dependency);
+}
+
+[ApiController]
+public sealed class ControllerWithoutAccess : ControllerBase
+{
+    public IActionResult Get() => Ok();
+
+    [AnonymousAccess]
+    public IActionResult Anonymous() => Ok();
+}
+
+[ApiController]
+[RequireAuthenticatedUser]
+public sealed class ControllerWithTwoAccessRequirements : ControllerBase
+{
+    [AnonymousAccess]
+    public IActionResult Get() => Ok();
 }
 
 [ApiController]

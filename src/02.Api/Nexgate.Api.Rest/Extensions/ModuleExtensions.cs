@@ -1,6 +1,5 @@
 using Nexgate.Common.BuildingBlocks.Persistence;
 using Nexgate.Service.Identity;
-using Nexgate.Service.Sample;
 using Nexgate.Service.Tenancy;
 
 namespace Nexgate.Api.Rest.Extensions;
@@ -15,7 +14,6 @@ public static class ModuleExtensions
     public static IServiceCollection AddModules(this IServiceCollection services)
     {
         services.AddDatabaseMigrator();
-        services.AddSampleService();
         services.AddTenancyService();
         services.AddIdentityService();
         services.AddNexgateAuthentication();

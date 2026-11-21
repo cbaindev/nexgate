@@ -1,0 +1,54 @@
+using System.ComponentModel.DataAnnotations;
+using Nexgate.Service.Identity.Contracts;
+
+namespace Nexgate.Api.Rest.Models.Identity;
+
+// Los atributos de validación van sobre los parámetros del constructor: MVC los lee de ahí en los records.
+
+public sealed record SignInRequest(string? Email, string? Password, Guid? OrganizationId);
+
+public sealed record RefreshRequest(string? RefreshToken, Guid? OrganizationId);
+
+public sealed record SignOutRequest(string? RefreshToken);
+
+public sealed record TokenResponse(string AccessToken, string TokenType, int ExpiresIn, string RefreshToken, Guid? OrganizationId);
+
+public sealed record InviteRequest(
+    [Required(ErrorMessage = "El correo es obligatorio")]
+    [StringLength(EmailRules.MaxLength, ErrorMessage = "El correo no puede superar 320 caracteres")]
+    string? Email,
+    [Required(ErrorMessage = "El rol es obligatorio")]
+    string? Role,
+    [Required(ErrorMessage = "El tipo de alcance es obligatorio")]
+    string? ScopeType,
+    Guid? SiteId);
+
+public sealed record AcceptInvitationRequest(string? Token, string? Password);
+
+public sealed record AcceptInvitationResponse(Guid UserId, Guid OrganizationId);
+
+public sealed record AssignRoleRequest(
+    [Required(ErrorMessage = "El rol es obligatorio")]
+    string? Role,
+    [Required(ErrorMessage = "El tipo de alcance es obligatorio")]
+    string? ScopeType,
+    Guid? SiteId,
+    DateTimeOffset? ValidFrom,
+    DateTimeOffset? ValidUntil);
+
+public sealed record AdministratorInvitationRequest(
+    [Required(ErrorMessage = "El correo es obligatorio")]
+    [StringLength(EmailRules.MaxLength, ErrorMessage = "El correo no puede superar 320 caracteres")]
+    string? Email);
+
+public sealed record RoleAssignmentResponse(Guid Id, string Role, string ScopeType, Guid? SiteId, DateTimeOffset? ValidFrom, DateTimeOffset? ValidUntil)
+{
+    public static RoleAssignmentResponse From(RoleAssignmentDto assignment) =>
+        new(assignment.Id, assignment.Role, assignment.ScopeType, assignment.SiteId, assignment.ValidFrom, assignment.ValidUntil);
+}
+
+public sealed record MemberResponse(Guid UserId, string Email, IReadOnlyList<RoleAssignmentResponse> RoleAssignments);
+
+public sealed record PermissionResponse(string Name, bool Organization, IReadOnlyList<Guid> SiteIds);
+
+public sealed record PermissionsResponse(Guid? OrganizationId, IReadOnlyList<PermissionResponse> Permissions);

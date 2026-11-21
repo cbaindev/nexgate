@@ -12,7 +12,7 @@ public class ErrorTests
         using var factory = new NexgateFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/v1/sample/fail");
+        var response = await client.GetAsync(TestEndpoints.Fail);
         var body = await response.Content.ReadAsStringAsync();
         using var json = JsonDocument.Parse(body);
 
@@ -24,75 +24,83 @@ public class ErrorTests
         var correlationHeader = Assert.Single(response.Headers.GetValues("X-Correlation-Id"));
         Assert.Equal(correlationHeader, json.RootElement.GetProperty("correlationId").GetString());
 
-        Assert.DoesNotContain("detalle-interno-secreto", body);
+        Assert.DoesNotContain(TestEndpoints.SecretFailureDetail, body);
         Assert.DoesNotContain("InvalidOperationException", body);
         Assert.DoesNotContain("   at ", body);
-        Assert.DoesNotContain("SampleModule", body);
+        Assert.DoesNotContain("TestEndpoints", body);
     }
 
     [Fact]
     public async Task Invalid_request_returns_400_listing_each_invalid_field()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateClientFor(await factory.CreateOrganizationAsync());
 
-        var response = await client.PostAsJsonAsync("/api/v1/sample/greet", new { name = new string('x', 80) });
+        var response = await client.PostAsJsonAsync("/api/v1/sites",
+            new { name = new string('x', 250), type = "castle", timeZone = "America/Cordoba" });
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("validation_error", json.RootElement.GetProperty("code").GetString());
-        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("Name", out var nameErrors));
-        Assert.Equal(1, nameErrors.GetArrayLength());
+        var errors = json.RootElement.GetProperty("errors");
+        Assert.Equal(1, errors.GetProperty("Name").GetArrayLength());
+        Assert.Equal(1, errors.GetProperty("Type").GetArrayLength());
+        Assert.False(errors.TryGetProperty("TimeZone", out _), "America/Cordoba es un alias IANA válido");
         Assert.False(string.IsNullOrEmpty(json.RootElement.GetProperty("correlationId").GetString()));
     }
 
     [Fact]
-    public async Task Missing_required_field_returns_400()
+    public async Task Missing_required_fields_return_400()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateClientFor(await factory.CreateOrganizationAsync());
 
-        var response = await client.PostAsJsonAsync("/api/v1/sample/greet", new { });
+        var response = await client.PostAsJsonAsync("/api/v1/sites", new { });
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errors = json.RootElement.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("Name", out _));
+        Assert.True(errors.TryGetProperty("Type", out _));
+        Assert.True(errors.TryGetProperty("TimeZone", out _));
     }
 
     [Fact]
     public async Task Valid_request_is_processed()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateClientFor(await factory.CreateOrganizationAsync());
 
-        var response = await client.PostAsJsonAsync("/api/v1/sample/greet", new { name = "Ana" });
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var response = await client.PostAsJsonAsync("/api/v1/sites", new { name = "Ana", type = "house", timeZone = "UTC" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Hola, Ana", json.RootElement.GetProperty("message").GetString());
-    }
-
-    [Fact]
-    public async Task Failure_endpoint_is_not_found_when_disabled()
-    {
-        using var factory = new NexgateFactory { EnableFailureEndpoint = false };
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/sample/fail");
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("not_found", json.RootElement.GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
     public async Task Validation_error_keeps_the_spanish_title()
     {
         using var factory = new NexgateFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateClientFor(await factory.CreateOrganizationAsync());
 
-        var response = await client.PostAsJsonAsync("/api/v1/sample/greet", new { });
+        var response = await client.PostAsJsonAsync("/api/v1/sites", new { });
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         Assert.Equal("Error de validación", json.RootElement.GetProperty("title").GetString());
         Assert.Equal("El nombre es obligatorio", json.RootElement.GetProperty("errors").GetProperty("Name")[0].GetString());
+    }
+
+    [Fact]
+    public async Task Malformed_json_without_a_token_on_a_protected_endpoint_returns_401()
+    {
+        // MVC evalúa la autorización antes de leer el cuerpo (design de integrate-modules-into-layers, Risks).
+        using var factory = new NexgateFactory();
+        using var client = factory.CreateClient();
+
+        using var content = new StringContent("{ esto no es json", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/v1/sites", content);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("authentication_required", json.RootElement.GetProperty("code").GetString());
     }
 }

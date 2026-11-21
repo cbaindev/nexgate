@@ -6,11 +6,15 @@ namespace Nexgate.Test.Architecture;
 /// <summary>
 /// Los controllers solo usan los contratos públicos de los módulos (D3 de adopt-smt-layout-and-controllers):
 /// los tipos de sus constructores, parámetros de acciones y retornos declarados deben venir de un ensamblado
-/// *.Contracts, de Nexgate.Common.* o del framework. El .csproj de la API referencia las capas internas solo
-/// para registrarlas en DI, así que esta regla se verifica por reflexión.
+/// *.Contracts, de Nexgate.Common.*, del framework o de los modelos HTTP de la propia API (Nexgate.Api.Rest.Models, D5
+/// de integrate-modules-into-layers). El .csproj de la API referencia las capas internas solo para registrarlas en DI,
+/// así que esta regla se verifica por reflexión. Además, toda acción declara exactamente un requisito de acceso (D6).
 /// </summary>
 public static class ControllerRules
 {
+    private const string ApiAssembly = "Nexgate.Api.Rest";
+    private const string ApiModelsNamespace = "Nexgate.Api.Rest.Models";
+
     public static IReadOnlyList<string> Violations(IEnumerable<Type> controllers)
     {
         var violations = new List<string>();
@@ -30,6 +34,29 @@ public static class ControllerRules
                 foreach (var type in Expand(declared).Where(t => t != controller && IsForbidden(t)).Distinct())
                 {
                     violations.Add($"{controller.Name}.{where} usa {type.FullName} de {type.Assembly.GetName().Name}: un controller solo puede usar contratos públicos.");
+                }
+            }
+        }
+
+        return violations;
+    }
+
+    /// <summary>
+    /// Acciones sin requisito de acceso, o con más de uno, contando los del controller (y sus bases) y los de la acción.
+    /// Una acción nueva sin atributo de acceso haría fallar el build en lugar de quedar pública por omisión.
+    /// </summary>
+    public static IReadOnlyList<string> AccessViolations(IEnumerable<Type> controllers, Type accessAttribute)
+    {
+        var violations = new List<string>();
+        foreach (var controller in controllers)
+        {
+            var onController = controller.GetCustomAttributes(accessAttribute, inherit: true).Length;
+            foreach (var action in Actions(controller))
+            {
+                var count = onController + action.GetCustomAttributes(accessAttribute, inherit: true).Length;
+                if (count != 1)
+                {
+                    violations.Add($"{controller.Name}.{action.Name} declara {count} requisitos de acceso: debe declarar exactamente uno.");
                 }
             }
         }
@@ -60,6 +87,11 @@ public static class ControllerRules
     private static bool IsForbidden(Type type)
     {
         var assembly = type.Assembly.GetName().Name ?? string.Empty;
+        if (assembly == ApiAssembly && type.Namespace?.StartsWith(ApiModelsNamespace, StringComparison.Ordinal) == true)
+        {
+            return false;
+        }
+
         return assembly.StartsWith("Nexgate.", StringComparison.Ordinal)
             && !assembly.EndsWith(".Contracts", StringComparison.Ordinal)
             && !assembly.StartsWith("Nexgate.Common.", StringComparison.Ordinal);
