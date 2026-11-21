@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>
 /// Sentencias estándar de aislamiento para las migraciones de los módulos. Todas las tablas de negocio usan

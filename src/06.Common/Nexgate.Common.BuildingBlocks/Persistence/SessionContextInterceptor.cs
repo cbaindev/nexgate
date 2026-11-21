@@ -1,9 +1,9 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Nexgate.BuildingBlocks.Access;
-using Nexgate.BuildingBlocks.Tenancy;
+using Nexgate.Common.BuildingBlocks.Security;
+using Nexgate.Common.BuildingBlocks.Tenancy;
 
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>
 /// Fija la organización activa y el usuario actual en la sesión de PostgreSQL cada vez que EF abre una conexión.

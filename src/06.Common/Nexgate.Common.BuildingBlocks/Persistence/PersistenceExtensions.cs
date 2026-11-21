@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Nexgate.BuildingBlocks.Access;
+using Nexgate.Common.BuildingBlocks.Security;
 
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>Contexto de un módulo registrado para ejecutar sus migraciones.</summary>
 public sealed record ModuleDatabase(Type ContextType, string Schema);

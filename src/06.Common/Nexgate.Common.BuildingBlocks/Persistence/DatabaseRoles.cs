@@ -1,4 +1,4 @@
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>Roles y variables de sesión de PostgreSQL (los roles los crea infra/postgres/init/01-roles.sh).</summary>
 public static class DatabaseRoles

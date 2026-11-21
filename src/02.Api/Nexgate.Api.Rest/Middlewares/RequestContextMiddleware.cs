@@ -1,25 +1,6 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
+using Nexgate.Common.BuildingBlocks.Security;
 
-namespace Nexgate.BuildingBlocks.Access;
-
-/// <summary>Claims del token de acceso que emite Identity.</summary>
-public static class AccessClaims
-{
-    public const string Subject = "sub";
-    public const string Organization = "org_id";
-    public const string Session = "sid";
-}
-
-/// <summary>
-/// Verifica que el usuario tiene una membresía activa en la organización y devuelve sus permisos efectivos en ella,
-/// o null si no hay membresía. Lo implementa Identity. Se ejecuta con el usuario y la organización ya fijados en el
-/// contexto, así que la consulta pasa por RLS.
-/// </summary>
-public interface IRequestAccessResolver
-{
-    Task<IReadOnlyList<PermissionGrant>?> ResolveAsync(Guid userId, Guid organizationId, CancellationToken cancellationToken);
-}
+namespace Nexgate.Api.Rest.Middlewares;
 
 /// <summary>
 /// Completa <see cref="RequestContext"/> desde el token ya validado por la autenticación: usuario (<c>sub</c>) y

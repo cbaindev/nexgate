@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Nexgate.BuildingBlocks.Tenancy;
+using Nexgate.Common.BuildingBlocks.Tenancy;
 
-namespace Nexgate.BuildingBlocks.Access;
+namespace Nexgate.Common.BuildingBlocks.Security;
 
 /// <summary>Usuario autenticado de la solicitud o del alcance actual, si lo hay.</summary>
 public interface ICurrentUser

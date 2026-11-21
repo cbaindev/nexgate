@@ -1,4 +1,4 @@
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>
 /// Objetos compartidos por todos los schemas. Se aplican antes de las migraciones de los módulos y son idempotentes.

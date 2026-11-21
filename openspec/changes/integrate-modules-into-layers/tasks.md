@@ -15,10 +15,10 @@
 
 ## 2. Piezas transversales y control de acceso
 
-- [ ] 2.1 Mover con `git mv` `Access/RequestContext` y la persistencia compartida (`Persistence/*`) a `Nexgate.Common.BuildingBlocks/Security` y `/Persistence` según D8, con paquetes EF Core y Npgsql y sin `Microsoft.AspNetCore.App`; unificar `ICurrentOrganization` con `RequestContext` y eliminar `HttpContextCurrentOrganization`; verificar `dotnet build` y que `TelemetryTests` sigue en verde
-- [ ] 2.2 Mover `RequestContextMiddleware` a `Api.Rest/Middlewares` y registrarlo en el pipeline en el mismo orden que en la rama de módulos; verificar `dotnet build` y las pruebas de correlación y telemetría
+- [x] 2.1 Mover con `git mv` `Access/RequestContext` y la persistencia compartida (`Persistence/*`) a `Nexgate.Common.BuildingBlocks/Security` y `/Persistence` según D8, con paquetes EF Core y Npgsql y sin `Microsoft.AspNetCore.App`; unificar `ICurrentOrganization` con `RequestContext` y eliminar `HttpContextCurrentOrganization`; verificar `dotnet build` y que `TelemetryTests` sigue en verde
+- [x] 2.2 Mover `RequestContextMiddleware` a `Api.Rest/Middlewares` y registrarlo en el pipeline en el mismo orden que en la rama de módulos; verificar `dotnet build` y las pruebas de correlación y telemetría
 - [ ] 2.3 Crear los atributos de acceso de D6 (`RequireAuthenticatedUser`, `RequirePermission`, `RequirePlatformOperator`, `AnonymousAccess`) en `Api.Rest/Authorization`, escribiendo problem details con `IProblemDetailsService`; verificar con pruebas sobre un controller de prueba que cubran 401, 403 `organization_context_required` y 403 `permission_denied` en ese orden
-- [ ] 2.4 Agregar la clase base `ApiControllerBase` con `[ApiController]`, `[Consumes("application/json")]` y `[Produces("application/json")]`; verificar `dotnet build`
+- [x] 2.4 Agregar la clase base `ApiControllerBase` con `[ApiController]`, `[Consumes("application/json")]` y `[Produces("application/json")]`; verificar `dotnet build`
 
 ## 3. Tenancy en capas
 

@@ -2,10 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexgate.BuildingBlocks.Tenancy;
+using Nexgate.Common.BuildingBlocks.Tenancy;
 using Npgsql;
 
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>
 /// Aplica los objetos compartidos y las migraciones de todos los módulos con el rol owner

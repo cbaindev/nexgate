@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Nexgate.BuildingBlocks.Tenancy;
+using Nexgate.Common.BuildingBlocks.Tenancy;
 
-namespace Nexgate.BuildingBlocks.Persistence;
+namespace Nexgate.Common.BuildingBlocks.Persistence;
 
 /// <summary>
 /// Base de los DbContext de los módulos. Es la segunda barrera de aislamiento (la primera es RLS):
