@@ -1,7 +1,22 @@
 namespace Nexgate.Service.Spaces.Contracts;
 
-/// <summary>Espacio tal como lo ven la API y los demás módulos. No contiene datos personales.</summary>
-public sealed record SpaceDto(Guid Id, Guid SiteId, Guid? ParentId, string Type, string Name, bool IsCommon, int Depth);
+/// <summary>
+/// Espacio tal como lo ven la API y los demás módulos. No contiene datos personales. <see cref="AncestorIds"/> son los
+/// identificadores desde la raíz hasta el padre (vacío en la raíz).
+/// </summary>
+public sealed record SpaceDto(
+    Guid Id,
+    Guid SiteId,
+    Guid? ParentId,
+    string Type,
+    string Name,
+    bool IsCommon,
+    int Depth,
+    IReadOnlyList<Guid> AncestorIds)
+{
+    /// <summary>Camino desde la raíz hasta este espacio inclusive.</summary>
+    public IEnumerable<Guid> PathIds() => AncestorIds.Append(Id);
+}
 
 /// <summary>Punto de acceso tal como lo ven la API y los demás módulos.</summary>
 public sealed record AccessPointDto(Guid Id, Guid SiteId, string Name, string Type, Guid ToSpaceId, Guid? FromSpaceId, string FailMode);
@@ -80,8 +95,20 @@ public interface ISpaceDirectory
 {
     Task<SpaceDto?> GetSpaceAsync(Guid spaceId, CancellationToken cancellationToken);
 
+    /// <summary>Los espacios indicados que existen en la organización activa (los demás se omiten).</summary>
+    Task<IReadOnlyList<SpaceDto>> GetSpacesAsync(IReadOnlyCollection<Guid> spaceIds, CancellationToken cancellationToken);
+
     Task<AccessPointDto?> GetAccessPointAsync(Guid accessPointId, CancellationToken cancellationToken);
 
     /// <summary>Puntos del camino al espacio, desde la raíz; null si el espacio no existe.</summary>
     Task<IReadOnlyList<AccessPathEntryDto>?> GetAccessPathAsync(Guid spaceId, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Uso de un espacio por otro módulo (por ejemplo, como alcance de un rol). Cada módulo que referencia espacios lo
+/// implementa y lo registra; Spaces no elimina un espacio que alguno usa. Se evalúa con la organización activa (RLS).
+/// </summary>
+public interface ISpaceUsage
+{
+    Task<bool> IsUsedAsync(Guid spaceId, CancellationToken cancellationToken);
 }

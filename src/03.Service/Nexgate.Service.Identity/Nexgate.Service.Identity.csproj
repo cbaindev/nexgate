@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexgate.Service.Identity.Contracts\Nexgate.Service.Identity.Contracts.csproj" />
     <ProjectReference Include="..\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\Nexgate.Service.Spaces.Contracts\Nexgate.Service.Spaces.Contracts.csproj" />
     <ProjectReference Include="..\..\04.Data\Nexgate.Data.Identity\Nexgate.Data.Identity.csproj" />
     <ProjectReference Include="..\..\05.Domain\Nexgate.Domain.Identity\Nexgate.Domain.Identity.csproj" />
     <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />

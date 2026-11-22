@@ -219,8 +219,14 @@ internal sealed class InvitationStore(IdentityDbContext db, IContextScopeFactory
         }
 
         var invitation = await scoped.Invitations.AsNoTracking().SingleAsync(i => i.Id == record.InvitationId, cancellationToken);
-        if (invitation.ScopeId is { } siteId
-            && !await scope.ServiceProvider.GetRequiredService<IOrganizationReferences>().SiteExistsAsync(siteId, cancellationToken))
+        var references = scope.ServiceProvider.GetRequiredService<IOrganizationReferences>();
+        var scopeExists = invitation.Scope switch
+        {
+            { SiteId: { } siteId } => await references.SiteExistsAsync(siteId, cancellationToken),
+            { SpaceId: { } spaceId } => await references.SpaceExistsAsync(spaceId, cancellationToken),
+            _ => true
+        };
+        if (!scopeExists)
         {
             return AcceptOutcome.InvalidInvitation;
         }
@@ -342,6 +348,11 @@ internal sealed class AccessQueries(IdentityDbContext db) : IAccessQueries
     public Task<bool> IsPlatformOperatorAsync(Guid userId, CancellationToken cancellationToken) =>
         db.UserAccounts.AsNoTracking()
             .AnyAsync(a => a.Id == userId && a.PlatformOperator && a.Status == AccountStatus.Active, cancellationToken);
+
+    public async Task<bool> IsSpaceScopeInUseAsync(Guid spaceId, DateTimeOffset now, CancellationToken cancellationToken) =>
+        await db.RoleAssignments.AnyAsync(r => r.ScopeType == ScopeType.Space && r.ScopeId == spaceId, cancellationToken)
+        || await db.Invitations.AnyAsync(
+            i => i.ScopeType == ScopeType.Space && i.ScopeId == spaceId && i.AcceptedAt == null && i.ExpiresAt > now, cancellationToken);
 }
 
 public static class IdentityDataServiceCollectionExtensions

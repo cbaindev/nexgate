@@ -147,7 +147,7 @@ internal sealed class InvitationService(
     IInvitationStore invitations,
     IIdentityLookups lookups,
     IPasswordHashing passwords,
-    ISiteDirectory sites,
+    ScopeReferences scopes,
     IdentityLifetimes lifetimes,
     TimeProvider clock) : IInvitationService, IAdministratorInvitations
 {
@@ -232,7 +232,7 @@ internal sealed class InvitationService(
             return IdentityResult<(string, Role, RoleScope)>.Fail(IdentityErrorKind.Validation, "Email", "Correo electrónico inválido.");
         }
 
-        var scope = await RoleScopes.ParseAsync(input.Role, input.ScopeType, input.SiteId, sites, cancellationToken);
+        var scope = await RoleScopes.ParseAsync(input.Role, input.ScopeType, input.SiteId, input.SpaceId, scopes, cancellationToken);
         return scope.Error is not null
             ? IdentityResult<(string, Role, RoleScope)>.Fail(scope.Error.Kind, scope.Error.Field, scope.Error.Message)
             : IdentityResult<(string, Role, RoleScope)>.Ok((email, scope.Value.Role, scope.Value.Scope));
@@ -247,17 +247,17 @@ internal sealed class InvitationService(
 
     private static IssuedInvitation ToIssued(Invitation invitation, string token) =>
         new(invitation.Id, invitation.NormalizedEmail, IdentityNames.ToName(invitation.Role), IdentityNames.ToName(invitation.ScopeType),
-            invitation.ScopeId, invitation.ExpiresAt, token);
+            invitation.Scope.SiteId, invitation.Scope.SpaceId, invitation.ExpiresAt, token);
 }
 
 internal static class RoleScopes
 {
     /// <summary>
-    /// Valida rol y alcance. Un sitio inexistente y uno de otra organización dan el mismo error (el directorio de
-    /// sitios pasa por RLS).
+    /// Valida rol y alcance. Un sitio o espacio inexistente y uno de otra organización dan el mismo error (los directorios
+    /// pasan por RLS).
     /// </summary>
     public static async Task<IdentityResult<(Role Role, RoleScope Scope)>> ParseAsync(string? roleName, string? scopeName, Guid? siteId,
-        ISiteDirectory sites, CancellationToken cancellationToken)
+        Guid? spaceId, ScopeReferences references, CancellationToken cancellationToken)
     {
         if (!IdentityNames.TryParseRole(roleName, out var role))
         {
@@ -266,22 +266,27 @@ internal static class RoleScopes
 
         if (!IdentityNames.TryParseScope(scopeName, out var scopeType))
         {
-            return IdentityResult<(Role, RoleScope)>.Fail(IdentityErrorKind.Validation, "ScopeType", "Tipo de alcance inválido: organization o site.");
+            return IdentityResult<(Role, RoleScope)>.Fail(IdentityErrorKind.Validation, "ScopeType", "Tipo de alcance inválido: organization, site o space.");
         }
 
         RoleScope scope;
         try
         {
-            scope = RoleScope.Create(scopeType, siteId);
+            scope = RoleScope.Create(scopeType, siteId, spaceId);
         }
         catch (DomainValidationException e)
         {
             return IdentityFailures.Invalid<(Role, RoleScope)>(e);
         }
 
-        if (scope.SiteId is { } id && !await sites.ExistsAsync(id, cancellationToken))
+        if (scope.SiteId is { } id && !await references.SiteExistsAsync(id, cancellationToken))
         {
             return IdentityResult<(Role, RoleScope)>.Fail(IdentityErrorKind.Validation, "SiteId", "El sitio no existe en la organización activa.");
+        }
+
+        if (scope.SpaceId is { } space && !await references.SpaceExistsAsync(space, cancellationToken))
+        {
+            return IdentityResult<(Role, RoleScope)>.Fail(IdentityErrorKind.Validation, "SpaceId", "El espacio no existe en la organización activa.");
         }
 
         return IdentityResult<(Role, RoleScope)>.Ok((role, scope));
@@ -289,7 +294,7 @@ internal static class RoleScopes
 }
 
 /// <summary>Miembros y asignaciones de rol de la organización activa (design, decisiones 7 y 10).</summary>
-internal sealed class MemberService(IMemberStore members, ISiteDirectory sites, TimeProvider clock) : IMemberService
+internal sealed class MemberService(IMemberStore members, ScopeReferences scopes, TimeProvider clock) : IMemberService
 {
     public async Task<IReadOnlyList<MemberDto>> ListAsync(CancellationToken cancellationToken) =>
         (await members.ListAsync(cancellationToken))
@@ -304,7 +309,7 @@ internal sealed class MemberService(IMemberStore members, ISiteDirectory sites, 
             return IdentityResult<RoleAssignmentDto>.Fail(IdentityErrorKind.NotFound);
         }
 
-        var parsed = await RoleScopes.ParseAsync(input.Role, input.ScopeType, input.SiteId, sites, cancellationToken);
+        var parsed = await RoleScopes.ParseAsync(input.Role, input.ScopeType, input.SiteId, input.SpaceId, scopes, cancellationToken);
         if (parsed.Error is not null)
         {
             return IdentityResult<RoleAssignmentDto>.Fail(parsed.Error.Kind, parsed.Error.Field, parsed.Error.Message);
@@ -332,8 +337,8 @@ internal sealed class MemberService(IMemberStore members, ISiteDirectory sites, 
         members.RevokeRoleAssignmentAsync(userId, assignmentId, clock.GetUtcNow(), cancellationToken);
 
     private static RoleAssignmentDto ToDto(RoleAssignment assignment) =>
-        new(assignment.Id, IdentityNames.ToName(assignment.Role), IdentityNames.ToName(assignment.ScopeType), assignment.ScopeId,
-            assignment.ValidFrom, assignment.ValidUntil);
+        new(assignment.Id, IdentityNames.ToName(assignment.Role), IdentityNames.ToName(assignment.ScopeType), assignment.Scope.SiteId,
+            assignment.Scope.SpaceId, assignment.ValidFrom, assignment.ValidUntil);
 }
 
 /// <summary>Datos del usuario actual y sus organizaciones, para el selector (design, decisión 8).</summary>

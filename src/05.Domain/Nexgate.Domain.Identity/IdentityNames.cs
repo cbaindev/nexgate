@@ -33,6 +33,7 @@ public static class IdentityNames
         {
             ScopeTypeNames.Organization => (true, ScopeType.Organization),
             ScopeTypeNames.Site => (true, ScopeType.Site),
+            ScopeTypeNames.Space => (true, ScopeType.Space),
             _ => (false, default)
         };
         return ok;
@@ -42,6 +43,7 @@ public static class IdentityNames
     {
         ScopeType.Organization => ScopeTypeNames.Organization,
         ScopeType.Site => ScopeTypeNames.Site,
+        ScopeType.Space => ScopeTypeNames.Space,
         _ => throw new ArgumentOutOfRangeException(nameof(scope))
     };
 }
@@ -66,11 +68,27 @@ public static class PermissionCatalog
 
     public static IReadOnlyList<string> PermissionsOf(Role role) => ByRole[role];
 
-    /// <summary>Pares (permiso, sitio) sin repetir; sitio nulo es alcance de organización.</summary>
-    public static IReadOnlyList<(string Permission, Guid? SiteId)> Grants(IEnumerable<RoleAssignment> assignments, DateTimeOffset now) =>
+    /// <summary>
+    /// Permisos efectivos sin repetir: sitio nulo es alcance de organización; con espacio, el sitio es el que lo contiene
+    /// (<paramref name="siteOfSpace"/>). Un espacio sin sitio conocido (ya no existe) no otorga nada.
+    /// </summary>
+    public static IReadOnlyList<(string Permission, Guid? SiteId, Guid? SpaceId)> Grants(
+        IEnumerable<RoleAssignment> assignments, DateTimeOffset now, IReadOnlyDictionary<Guid, Guid>? siteOfSpace = null) =>
         assignments
             .Where(a => a.IsValidAt(now))
-            .SelectMany(a => ByRole[a.Role].Select(p => (Permission: p, SiteId: a.ScopeType == ScopeType.Organization ? null : a.ScopeId)))
+            .SelectMany(a => Scope(a, siteOfSpace) is { } scope
+                ? ByRole[a.Role].Select(p => (Permission: p, scope.SiteId, scope.SpaceId))
+                : [])
             .Distinct()
             .ToList();
+
+    private static (Guid? SiteId, Guid? SpaceId)? Scope(RoleAssignment assignment, IReadOnlyDictionary<Guid, Guid>? siteOfSpace) =>
+        assignment.ScopeType switch
+        {
+            ScopeType.Organization => (null, null),
+            ScopeType.Site => (assignment.ScopeId, null),
+            ScopeType.Space when assignment.ScopeId is { } space && siteOfSpace is not null
+                                 && siteOfSpace.TryGetValue(space, out var site) => (site, space),
+            _ => null
+        };
 }

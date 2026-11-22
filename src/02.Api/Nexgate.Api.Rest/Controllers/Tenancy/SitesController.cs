@@ -10,8 +10,8 @@ using Nexgate.Service.Tenancy.Contracts;
 namespace Nexgate.Api.Rest.Controllers.Tenancy;
 
 /// <summary>
-/// Sitios de la organización activa. Con alcance de sitio solo se ven los sitios del alcance; un sitio fuera del alcance
-/// responde como inexistente.
+/// Sitios de la organización activa. Con alcance de sitio solo se ven los sitios del alcance, y con alcance de espacio, el
+/// sitio que lo contiene (solo lectura); un sitio fuera del alcance responde como inexistente.
 /// </summary>
 [Tags("Sites")]
 [Route(Prefix + "sites")]
@@ -25,7 +25,7 @@ public sealed class SitesController(ISiteService sites, ICurrentPermissions perm
     [EndpointDescription("Con alcance de sitio, solo los sitios del alcance.")]
     [ProducesResponseType<List<SiteDto>>(StatusCodes.Status200OK)]
     public async Task<IResult> List(CancellationToken ct) =>
-        Results.Ok(await sites.ListAsync(OnlySites(permissions.SitesFor(Permissions.SitesRead)), ct));
+        Results.Ok(await sites.ListAsync(ReachableSites(permissions.ScopeFor(Permissions.SitesRead)), ct));
 
     [HttpGet("{id:guid}")]
     [RequirePermission(Permissions.SitesRead)]
@@ -35,7 +35,7 @@ public sealed class SitesController(ISiteService sites, ICurrentPermissions perm
     [ProducesResponseType<SiteDto>(StatusCodes.Status200OK)]
     [ProblemResponse(StatusCodes.Status404NotFound)]
     public async Task<IResult> Get(Guid id, CancellationToken ct) =>
-        permissions.SitesFor(Permissions.SitesRead).Allows(id)
+        permissions.ScopeFor(Permissions.SitesRead).ReachesSite(id)
             ? TenancyResults.ToHttp(await sites.GetAsync(id, ct), Results.Ok)
             : NotFoundProblem();
 
@@ -66,14 +66,16 @@ public sealed class SitesController(ISiteService sites, ICurrentPermissions perm
         if (!permissions.SitesFor(Permissions.SitesManage).Allows(id))
         {
             // Puede verlo pero no modificarlo: 403. Ni siquiera puede verlo: igual que inexistente.
-            return permissions.SitesFor(Permissions.SitesRead).Allows(id) ? AccessProblems.PermissionDenied() : NotFoundProblem();
+            return permissions.ScopeFor(Permissions.SitesRead).ReachesSite(id) ? AccessProblems.PermissionDenied() : NotFoundProblem();
         }
 
         var update = new SiteUpdate(request.Name!, request.TimeZone!, ConfigurationText(request.Configuration));
         return TenancyResults.ToHttp(await sites.UpdateAsync(id, update, ct), Results.Ok);
     }
 
-    private static IReadOnlyCollection<Guid>? OnlySites(SiteAccess access) => access.AllSites ? null : access.SiteIds;
+    /// <summary>Sitios que alcanza el permiso: enteros o por alguno de sus espacios; null es toda la organización.</summary>
+    private static IReadOnlyCollection<Guid>? ReachableSites(PermissionScope scope) =>
+        scope.Organization ? null : scope.Sites.Concat(scope.Spaces.Select(s => s.SiteId)).ToHashSet();
 
     private static string? ConfigurationText(JsonElement? configuration) =>
         configuration is { ValueKind: JsonValueKind.Object } value ? value.GetRawText() : null;

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Nexgate.Common.BuildingBlocks.Security;
 using Nexgate.Data.Identity;
 using Nexgate.Service.Identity.Contracts;
+using Nexgate.Service.Spaces.Contracts;
 
 namespace Nexgate.Service.Identity;
 
@@ -51,6 +52,8 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IPlatformOperators, PlatformOperatorService>();
         services.AddScoped<IRequestAccessResolver, IdentityAccessResolver>();
         services.AddScoped<IPlatformAccess, IdentityPlatformAccess>();
+        services.AddScoped<ScopeReferences>();
+        services.AddScoped<ISpaceUsage, IdentitySpaceUsage>();
         return services;
     }
 }

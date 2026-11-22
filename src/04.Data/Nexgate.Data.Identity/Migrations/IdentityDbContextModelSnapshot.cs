@@ -89,6 +89,9 @@ namespace Nexgate.Data.Identity.Migrations
                         .IsUnique()
                         .HasDatabaseName("ux_invitation_token_hash");
 
+                    b.HasIndex("ScopeType", "ScopeId")
+                        .HasDatabaseName("ix_invitation_scope");
+
                     b.ToTable("invitation", "identity");
 
                     b.HasAnnotation("Nexgate:TenantOwned", true);
@@ -244,6 +247,9 @@ namespace Nexgate.Data.Identity.Migrations
 
                     b.HasIndex("OrganizationId", "UserId")
                         .HasDatabaseName("ix_role_assignment_organization_user");
+
+                    b.HasIndex("ScopeType", "ScopeId")
+                        .HasDatabaseName("ix_role_assignment_scope");
 
                     b.ToTable("role_assignment", "identity");
 

@@ -25,16 +25,28 @@ public sealed class MeController(ICurrentUserService currentUser, RequestContext
     [EndpointName("getMyPermissions")]
     [EndpointSummary("Permisos efectivos en la organización activa")]
     [EndpointDescription("Permisos administrativos del usuario según sus roles vigentes, con alcance de organización o la lista " +
-        "de sitios. La interfaz muestra solo lo permitido; el servidor igual los verifica en cada operación.")]
+        "de sitios enteros y la de espacios (cada uno cubre su subárbol). La interfaz muestra solo lo permitido; el servidor igual " +
+        "los verifica en cada operación.")]
     [ProducesResponseType<PermissionsResponse>(StatusCodes.Status200OK)]
     public IResult GetPermissions() => Results.Ok(new PermissionsResponse(
         context.OrganizationId,
         context.Grants
             .GroupBy(g => g.Permission)
             .OrderBy(g => g.Key, StringComparer.Ordinal)
-            .Select(g => new PermissionResponse(
-                g.Key,
-                g.Any(x => x.SiteId is null),
-                g.Any(x => x.SiteId is null) ? [] : g.Select(x => x.SiteId!.Value).Distinct().Order().ToList()))
+            .Select(g =>
+            {
+                var organization = g.Any(x => x.SiteId is null);
+                return new PermissionResponse(
+                    g.Key,
+                    organization,
+                    organization ? [] : g.Where(x => x.SpaceId is null).Select(x => x.SiteId!.Value).Distinct().Order().ToList(),
+                    organization
+                        ? []
+                        : g.Where(x => x.SpaceId is not null)
+                            .Select(x => new PermissionSpaceResponse(x.SpaceId!.Value, x.SiteId!.Value))
+                            .Distinct()
+                            .OrderBy(x => x.SpaceId)
+                            .ToList());
+            })
             .ToList()));
 }

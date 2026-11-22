@@ -1,20 +1,28 @@
 # role-scopes Specification
 
 ## Purpose
-Roles administrativos con alcance de organización o de sitio y vigencia opcional, los permisos efectivos que dan sobre la API y la regla que impide dejar una organización sin administrador. No otorgan acceso físico: eso es exclusivo de los Otorgamientos.
+Roles administrativos con alcance de organización, de sitio o de espacio (con su subárbol) y vigencia opcional, los permisos efectivos que dan sobre la API y la regla que impide dejar una organización sin administrador. No otorgan acceso físico: eso es exclusivo de los Otorgamientos.
 
 ## Requirements
 
 ### Requirement: Roles and scopes
-The system SHALL let a user hold, within an organization, role assignments made of a role (administrator, guard, resident or employee), a scope (the whole organization or one site of that organization) and an optional validity period.
+The system SHALL let a user hold, within an organization, role assignments made of a role (administrator, guard, resident or employee), a scope (the whole organization, one site of that organization or one space of that organization) and an optional validity period.
 
 #### Scenario: Assign a role with site scope
 - **WHEN** an administrator assigns the guard role to a member with the scope of a site of the active organization
 - **THEN** the system responds with HTTP 201 and the assignment identifier, role, scope and validity
 
+#### Scenario: Assign a role with space scope
+- **WHEN** an administrator assigns the guard role to a member with the scope of a space of the active organization
+- **THEN** the system responds with HTTP 201 and the assignment with the space scope and the space identifier
+
 #### Scenario: Scope outside the active organization
-- **WHEN** an administrator assigns a role with the scope of a site that belongs to another organization or does not exist
-- **THEN** the system responds with HTTP 400, the same response in both cases, and no assignment is created
+- **WHEN** an administrator assigns a role with the scope of a site or a space that belongs to another organization or does not exist
+- **THEN** the system responds with HTTP 400, the same response in all cases, and no assignment is created
+
+#### Scenario: Scope without its identifier
+- **WHEN** an administrator assigns a role with the site scope without a site identifier or with the space scope without a space identifier
+- **THEN** the system responds with HTTP 400 and a problem details document that lists the missing field
 
 #### Scenario: Assign a role to a non-member
 - **WHEN** an administrator assigns a role to a user who is not a member of the active organization
@@ -29,7 +37,7 @@ The system SHALL let a user hold, within an organization, role assignments made 
 - **THEN** the system responds with HTTP 204 and the permissions granted by that assignment stop applying on the next request
 
 ### Requirement: Effective permissions
-The system SHALL derive a caller's permissions only from its role assignments in the active organization that are valid at the moment of the request, and SHALL evaluate them on the server for every request.
+The system SHALL derive a caller's permissions only from its role assignments in the active organization that are valid at the moment of the request, and SHALL evaluate them on the server for every request. A permission with space scope SHALL apply to that space and all its descendants, and never to its ancestors or to other branches of the tree.
 
 #### Scenario: Permissions by role
 - **WHEN** a request is evaluated
@@ -38,6 +46,22 @@ The system SHALL derive a caller's permissions only from its role assignments in
 #### Scenario: Site scope limits space permissions
 - **WHEN** a guard whose only assignment has the scope of site A reads the spaces or access points of site B of the same organization
 - **THEN** the system responds as if site B had no such resources, with HTTP 404
+
+#### Scenario: Space scope covers the subtree
+- **WHEN** a guard whose only assignment has the scope of building A reads building A, a floor of building A or an access point to that floor
+- **THEN** the system responds with HTTP 200
+
+#### Scenario: Space scope excludes ancestors and other branches
+- **WHEN** a guard whose only assignment has the scope of building A reads the root space of the site or building B of the same site
+- **THEN** the system responds with HTTP 404, the same response as for a space that does not exist
+
+#### Scenario: Space scope does not grant organization-level operations
+- **WHEN** an administrator whose only assignment has the scope of a space lists members, invites a person or creates a site
+- **THEN** the system responds with HTTP 403 and nothing changes
+
+#### Scenario: Scopes of the same user add up
+- **WHEN** a user holds the guard role with the scope of building A and the guard role with the scope of site B
+- **THEN** it can read the spaces of building A and of the whole site B, and nothing else
 
 #### Scenario: Assignment outside its validity
 - **WHEN** a role assignment has not started yet or has already ended
@@ -60,7 +84,11 @@ The system SHALL let an authenticated user read its effective permissions in the
 
 #### Scenario: Read own permissions
 - **WHEN** an authenticated user with an active organization requests its permissions
-- **THEN** the system responds with HTTP 200 and each permission with the scopes where it applies
+- **THEN** the system responds with HTTP 200 and each permission with the scopes where it applies: the whole organization, the list of sites, and the list of spaces with the site of each one
+
+#### Scenario: Read permissions with space scope
+- **WHEN** a guard whose only assignment has the scope of building A requests its permissions
+- **THEN** each of its permissions lists building A with its site, no organization scope and no whole site
 
 #### Scenario: Permissions without an active organization
 - **WHEN** an authenticated user without an active organization requests its permissions

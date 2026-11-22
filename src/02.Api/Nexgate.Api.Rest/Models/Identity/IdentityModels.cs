@@ -21,7 +21,8 @@ public sealed record InviteRequest(
     string? Role,
     [Required(ErrorMessage = "El tipo de alcance es obligatorio")]
     string? ScopeType,
-    Guid? SiteId);
+    Guid? SiteId,
+    Guid? SpaceId);
 
 public sealed record AcceptInvitationRequest(string? Token, string? Password);
 
@@ -34,21 +35,36 @@ public sealed record AssignRoleRequest(
     string? ScopeType,
     Guid? SiteId,
     DateTimeOffset? ValidFrom,
-    DateTimeOffset? ValidUntil);
+    DateTimeOffset? ValidUntil,
+    Guid? SpaceId);
 
 public sealed record AdministratorInvitationRequest(
     [Required(ErrorMessage = "El correo es obligatorio")]
     [StringLength(EmailRules.MaxLength, ErrorMessage = "El correo no puede superar 320 caracteres")]
     string? Email);
 
-public sealed record RoleAssignmentResponse(Guid Id, string Role, string ScopeType, Guid? SiteId, DateTimeOffset? ValidFrom, DateTimeOffset? ValidUntil)
+public sealed record RoleAssignmentResponse(
+    Guid Id,
+    string Role,
+    string ScopeType,
+    Guid? SiteId,
+    Guid? SpaceId,
+    DateTimeOffset? ValidFrom,
+    DateTimeOffset? ValidUntil)
 {
     public static RoleAssignmentResponse From(RoleAssignmentDto assignment) =>
-        new(assignment.Id, assignment.Role, assignment.ScopeType, assignment.SiteId, assignment.ValidFrom, assignment.ValidUntil);
+        new(assignment.Id, assignment.Role, assignment.ScopeType, assignment.SiteId, assignment.SpaceId, assignment.ValidFrom,
+            assignment.ValidUntil);
 }
 
 public sealed record MemberResponse(Guid UserId, string Email, IReadOnlyList<RoleAssignmentResponse> RoleAssignments);
 
-public sealed record PermissionResponse(string Name, bool Organization, IReadOnlyList<Guid> SiteIds);
+/// <summary>
+/// Un permiso efectivo: con alcance de organización, o en sitios enteros (<see cref="SiteIds"/>) y en espacios con su
+/// subárbol (<see cref="Spaces"/>).
+/// </summary>
+public sealed record PermissionResponse(string Name, bool Organization, IReadOnlyList<Guid> SiteIds, IReadOnlyList<PermissionSpaceResponse> Spaces);
+
+public sealed record PermissionSpaceResponse(Guid SpaceId, Guid SiteId);
 
 public sealed record PermissionsResponse(Guid? OrganizationId, IReadOnlyList<PermissionResponse> Permissions);

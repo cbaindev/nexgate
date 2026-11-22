@@ -100,8 +100,8 @@ public class IdentityUnitTests
 
         var grants = PermissionCatalog.Grants(assignments, Now);
 
-        Assert.Contains((Permissions.SitesRead, (Guid?)null), grants);
-        Assert.Contains((Permissions.SitesManage, (Guid?)site), grants);
+        Assert.Contains((Permissions.SitesRead, (Guid?)null, (Guid?)null), grants);
+        Assert.Contains((Permissions.SitesManage, (Guid?)site, (Guid?)null), grants);
         Assert.DoesNotContain(grants, g => g.Permission == Permissions.SitesManage && g.SiteId is null);
         Assert.Equal(grants.Count, grants.Distinct().Count());
     }

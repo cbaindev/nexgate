@@ -22,7 +22,7 @@ public sealed class InvitationsController(IInvitationService invitations, Reques
     [ProblemResponse(StatusCodes.Status409Conflict)]
     public async Task<IResult> Create(InviteRequest request, CancellationToken ct) =>
         IdentityResults.ToHttp(await invitations.InviteAsync(context.OrganizationId!.Value, context.UserId!.Value,
-                new InvitationInput(request.Email, request.Role, request.ScopeType, request.SiteId), ct),
+                new InvitationInput(request.Email, request.Role, request.ScopeType, request.SiteId, request.SpaceId), ct),
             issued => Results.Created($"/api/v1/invitations/{issued.Id}", issued));
 
     [HttpPost("accept")]

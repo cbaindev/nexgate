@@ -36,13 +36,14 @@ public sealed class MembersController(IMemberService members, RequestContext con
     [RequirePermission(Permissions.MembersManage, AtOrganization = true)]
     [EndpointName("assignRole")]
     [EndpointSummary("Asignar un rol a un miembro")]
-    [EndpointDescription("Rol con alcance de organización o de un sitio, con vigencia opcional.")]
+    [EndpointDescription("Rol con alcance de organización, de un sitio o de un espacio (con su subárbol), con vigencia opcional.")]
     [ProducesResponseType<RoleAssignmentResponse>(StatusCodes.Status201Created)]
     [ProblemResponse(StatusCodes.Status404NotFound)]
     [ProblemResponse(StatusCodes.Status409Conflict)]
     public async Task<IResult> AssignRole(Guid userId, AssignRoleRequest request, CancellationToken ct) =>
         IdentityResults.ToHttp(await members.AssignRoleAsync(context.OrganizationId!.Value, userId,
-                new RoleAssignmentInput(request.Role, request.ScopeType, request.SiteId, request.ValidFrom, request.ValidUntil), ct),
+                new RoleAssignmentInput(request.Role, request.ScopeType, request.SiteId, request.ValidFrom, request.ValidUntil,
+                    request.SpaceId), ct),
             assignment => Results.Created($"/api/v1/members/{userId}/role-assignments/{assignment.Id}",
                 RoleAssignmentResponse.From(assignment)));
 

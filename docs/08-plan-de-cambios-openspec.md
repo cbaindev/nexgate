@@ -39,12 +39,10 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | 3b | `add-openapi-contract` (agregado; **implementado y archivado**, ídem: contrato OpenAPI y Swagger UI) | `platform-api` | D-29, D-34 |
 | 3c | `integrate-modules-into-layers` (agregado; **implementado y archivado**): lleva Tenancy, Identity y el contrato OpenAPI a la estructura de 1b, con controllers y sin cambios de contrato | `platform-api` | D-32, D-33, D-34 |
 | 4 | `add-spaces-and-access-points` (**implementado y archivado**): módulo Spaces con el árbol de espacios, los puntos de acceso, el camino a un destino y los permisos `spaces.read` y `spaces.manage` | `space-tree`, `access-points`, `role-scopes` | D-06, D-09 |
-| 4b | `add-space-scoped-roles` (agregado): rol con alcance de espacio (D-03), separado del cambio 4 porque modifica Identity entero | `role-scopes` | D-03 |
+| 4b | `add-space-scoped-roles` (agregado; **implementado y archivado**): rol con alcance de espacio que cubre su subárbol (D-03), separado del cambio 4 porque modifica Identity entero | `role-scopes`, `organization-membership`, `organizations-and-sites`, `space-tree`, `access-points` | D-03 |
 | 5 | `add-access-evaluator` | `access/grants`, `access/access-evaluation`, `access/policy-compilation` (con vectores de prueba compartidos con el firmware) | D-13 |
 | 6 | `add-device-sync-protocol` | `devices/device-provisioning`, `devices/policy-sync`, `events/event-ingestion` | D-30 |
 | 7 | `add-admin-panel-shell` (base de la SPA progresiva: instalación, navegación por rol y cliente generado del contrato) | `web/admin-shell` | D-05, D-29 |
-
-> Pendiente para `add-space-scoped-roles`: agregar el alcance por espacio a `role-scopes` (hoy solo hay organización y sitio), con su validación contra el árbol de espacios (`ISpaceDirectory`). Hay que definir qué ve un rol con alcance de espacio (su sitio, el subárbol), cómo se filtran los permisos efectivos en todos los controllers, y su efecto en las invitaciones y en la protección del último administrador.
 
 ### Fase 2: MVP edificios
 

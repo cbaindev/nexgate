@@ -18,6 +18,9 @@ internal sealed class SpaceDirectory(ISpaceStore spaces, IAccessPointStore point
     public async Task<SpaceDto?> GetSpaceAsync(Guid spaceId, CancellationToken cancellationToken) =>
         await spaces.FindAsync(spaceId, cancellationToken) is { } space ? SpacesMapping.ToDto(space) : null;
 
+    public async Task<IReadOnlyList<SpaceDto>> GetSpacesAsync(IReadOnlyCollection<Guid> spaceIds, CancellationToken cancellationToken) =>
+        spaceIds.Count == 0 ? [] : (await spaces.FindManyAsync(spaceIds, cancellationToken)).Select(SpacesMapping.ToDto).ToList();
+
     public async Task<AccessPointDto?> GetAccessPointAsync(Guid accessPointId, CancellationToken cancellationToken) =>
         await points.FindAsync(accessPointId, cancellationToken) is { } point ? SpacesMapping.ToDto(point) : null;
 

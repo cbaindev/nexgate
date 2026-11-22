@@ -30,13 +30,14 @@ public static class RoleNames
     public static readonly IReadOnlyList<string> All = [Administrator, Guard, Resident, Employee];
 }
 
-/// <summary>Valores públicos del tipo de alcance de un rol (D-03). El alcance por espacio llega con add-space-scoped-roles.</summary>
+/// <summary>Valores públicos del tipo de alcance de un rol (D-03). Un espacio cubre también a sus descendientes.</summary>
 public static class ScopeTypeNames
 {
     public const string Organization = "organization";
     public const string Site = "site";
+    public const string Space = "space";
 
-    public static readonly IReadOnlyList<string> All = [Organization, Site];
+    public static readonly IReadOnlyList<string> All = [Organization, Site, Space];
 }
 
 /// <summary>Códigos de error estables del módulo.</summary>
@@ -72,7 +73,15 @@ public static class EmailRules
 }
 
 /// <summary>Invitación emitida. El token se devuelve una sola vez y no se guarda en claro.</summary>
-public sealed record IssuedInvitation(Guid Id, string Email, string Role, string ScopeType, Guid? SiteId, DateTimeOffset ExpiresAt, string Token);
+public sealed record IssuedInvitation(
+    Guid Id,
+    string Email,
+    string Role,
+    string ScopeType,
+    Guid? SiteId,
+    Guid? SpaceId,
+    DateTimeOffset ExpiresAt,
+    string Token);
 
 public enum AdministratorInvitationStatus
 {

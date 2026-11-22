@@ -7,7 +7,8 @@ namespace Nexgate.Service.Spaces;
 internal static class SpacesMapping
 {
     public static SpaceDto ToDto(Space space) =>
-        new(space.Id, space.SiteId, space.ParentId, SpaceNames.ToName(space.Type), space.Name, space.IsCommon, space.Depth);
+        new(space.Id, space.SiteId, space.ParentId, SpaceNames.ToName(space.Type), space.Name, space.IsCommon, space.Depth,
+            space.PathIds.Take(space.Depth).ToList());
 
     public static AccessPointDto ToDto(AccessPoint point) =>
         new(point.Id, point.SiteId, point.Name, SpaceNames.ToName(point.Type), point.ToSpaceId, point.FromSpaceId,
@@ -56,7 +57,12 @@ internal sealed class AccessPathQuery(ISpaceStore spaces, IAccessPointStore poin
     }
 }
 
-internal sealed class SpaceService(ISpaceStore store, ISiteReferences sites, AccessPathQuery paths, TimeProvider clock) : ISpaceService
+internal sealed class SpaceService(
+    ISpaceStore store,
+    ISiteReferences sites,
+    AccessPathQuery paths,
+    IEnumerable<ISpaceUsage> usages,
+    TimeProvider clock) : ISpaceService
 {
     public async Task<SpacesResult<IReadOnlyList<SpaceDto>>> ListAsync(Guid siteId, CancellationToken cancellationToken)
     {
@@ -156,7 +162,7 @@ internal sealed class SpaceService(ISpaceStore store, ISiteReferences sites, Acc
             return SpacesResult<Guid>.NotFound();
         }
 
-        if (await store.HasDependentsAsync(id, cancellationToken))
+        if (await store.HasDependentsAsync(id, cancellationToken) || await UsedByOtherModulesAsync(id, cancellationToken))
         {
             return SpacesResult<Guid>.Fail(SpacesMapping.HasDependents);
         }
@@ -173,6 +179,19 @@ internal sealed class SpaceService(ISpaceStore store, ISiteReferences sites, Acc
         await paths.GetAsync(spaceId, cancellationToken) is { } path
             ? SpacesResult<IReadOnlyList<AccessPathEntryDto>>.Ok(path)
             : SpacesResult<IReadOnlyList<AccessPathEntryDto>>.NotFound();
+
+    private async Task<bool> UsedByOtherModulesAsync(Guid spaceId, CancellationToken cancellationToken)
+    {
+        foreach (var usage in usages)
+        {
+            if (await usage.IsUsedAsync(spaceId, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private async Task<SpacesResult<SpaceDto>> SaveAsync(Space space, CancellationToken cancellationToken) =>
         await store.SaveChangesAsync(cancellationToken) switch

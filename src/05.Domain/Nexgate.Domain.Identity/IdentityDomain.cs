@@ -94,21 +94,36 @@ public enum Role
 public enum ScopeType
 {
     Organization,
-    Site
+    Site,
+    Space
 }
 
-/// <summary>Alcance de un rol: toda la organización o un sitio de ella (D-03).</summary>
-public sealed record RoleScope(ScopeType Type, Guid? SiteId)
+/// <summary>
+/// Alcance de un rol (D-03): toda la organización, un sitio o un espacio de ella. Un espacio cubre también a sus
+/// descendientes.
+/// </summary>
+public sealed record RoleScope(ScopeType Type, Guid? ScopeId)
 {
     public static readonly RoleScope Organization = new(ScopeType.Organization, null);
 
     public static RoleScope Site(Guid siteId) => new(ScopeType.Site, siteId);
 
-    public static RoleScope Create(ScopeType type, Guid? siteId) => type switch
+    public static RoleScope Space(Guid spaceId) => new(ScopeType.Space, spaceId);
+
+    /// <summary>El sitio del alcance de sitio (nulo en los demás).</summary>
+    public Guid? SiteId => Type == ScopeType.Site ? ScopeId : null;
+
+    /// <summary>El espacio del alcance de espacio (nulo en los demás).</summary>
+    public Guid? SpaceId => Type == ScopeType.Space ? ScopeId : null;
+
+    public static RoleScope Create(ScopeType type, Guid? siteId, Guid? spaceId = null) => type switch
     {
         ScopeType.Organization => Organization,
         ScopeType.Site when siteId is { } id && id != Guid.Empty => Site(id),
-        _ => throw new DomainValidationException("SiteId", "El alcance de sitio requiere el identificador del sitio.")
+        ScopeType.Site => throw new DomainValidationException("SiteId", "El alcance de sitio requiere el identificador del sitio."),
+        ScopeType.Space when spaceId is { } id && id != Guid.Empty => Space(id),
+        ScopeType.Space => throw new DomainValidationException("SpaceId", "El alcance de espacio requiere el identificador del espacio."),
+        _ => throw new DomainValidationException("ScopeType", "Tipo de alcance inválido.")
     };
 }
 
@@ -173,7 +188,7 @@ public sealed class RoleAssignment
             UserId = userId,
             Role = role,
             ScopeType = scope.Type,
-            ScopeId = scope.SiteId,
+            ScopeId = scope.ScopeId,
             ValidFrom = validFrom,
             ValidUntil = validUntil,
             CreatedAt = now
@@ -232,7 +247,7 @@ public sealed class Invitation
             NormalizedEmail = EmailAddress.Normalize(email),
             Role = role,
             ScopeType = scope.Type,
-            ScopeId = scope.SiteId,
+            ScopeId = scope.ScopeId,
             TokenHash = tokenHash,
             ExpiresAt = expiresAt,
             CreatedBy = createdBy,

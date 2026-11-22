@@ -114,6 +114,12 @@ public interface IAccessQueries
 
     /// <summary>El usuario es operador de plataforma con la cuenta activa.</summary>
     Task<bool> IsPlatformOperatorAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// El espacio es alcance de alguna asignación de rol (de cualquier vigencia) o de una invitación ni aceptada ni
+    /// vencida, en la organización activa.
+    /// </summary>
+    Task<bool> IsSpaceScopeInUseAsync(Guid spaceId, DateTimeOffset now, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -126,4 +132,6 @@ public interface IOrganizationReferences
     Task<bool> ActiveOrganizationExistsAsync(CancellationToken cancellationToken);
 
     Task<bool> SiteExistsAsync(Guid siteId, CancellationToken cancellationToken);
+
+    Task<bool> SpaceExistsAsync(Guid spaceId, CancellationToken cancellationToken);
 }

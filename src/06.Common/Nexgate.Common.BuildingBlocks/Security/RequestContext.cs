@@ -11,10 +11,11 @@ public interface ICurrentUser
 }
 
 /// <summary>
-/// Un permiso efectivo en la organización activa. <see cref="SiteId"/> nulo significa alcance de organización
-/// (cubre todos los sitios); con valor, cubre solo ese sitio.
+/// Un permiso efectivo en la organización activa, con su alcance: <see cref="SiteId"/> nulo es alcance de organización
+/// (cubre todos los sitios); con <see cref="SiteId"/> y sin <see cref="SpaceId"/>, el sitio entero; con
+/// <see cref="SpaceId"/>, ese espacio y sus descendientes (<see cref="SiteId"/> es el sitio que lo contiene).
 /// </summary>
-public sealed record PermissionGrant(string Permission, Guid? SiteId);
+public sealed record PermissionGrant(string Permission, Guid? SiteId, Guid? SpaceId = null);
 
 /// <summary>
 /// Contexto de seguridad de un alcance de DI (una solicitud HTTP o un alcance creado con
@@ -43,7 +44,34 @@ public sealed class RequestContext : ICurrentOrganization, ICurrentUser
     }
 }
 
-/// <summary>Sitios sobre los que aplica un permiso: todos (alcance de organización) o una lista.</summary>
+/// <summary>Un espacio del alcance de un permiso, con el sitio que lo contiene.</summary>
+public sealed record ScopedSpace(Guid SpaceId, Guid SiteId);
+
+/// <summary>
+/// Dónde aplica un permiso: toda la organización, sitios enteros y subárboles de espacios. Los alcances de un mismo
+/// usuario se suman.
+/// </summary>
+public sealed record PermissionScope(bool Organization, IReadOnlySet<Guid> Sites, IReadOnlyList<ScopedSpace> Spaces)
+{
+    public static readonly PermissionScope None = new(false, new HashSet<Guid>(), []);
+
+    public bool Any => Organization || Sites.Count > 0 || Spaces.Count > 0;
+
+    /// <summary>Aplica al sitio entero (alcance de organización o del sitio).</summary>
+    public bool CoversSite(Guid siteId) => Organization || Sites.Contains(siteId);
+
+    /// <summary>Aplica al sitio entero o a algún espacio del sitio.</summary>
+    public bool ReachesSite(Guid siteId) => CoversSite(siteId) || Spaces.Any(s => s.SiteId == siteId);
+
+    /// <summary>
+    /// Aplica a un recurso del árbol: cubre su sitio entero o alguno de los espacios de su camino
+    /// (<paramref name="pathIds"/>: desde la raíz hasta el recurso inclusive) es un espacio del alcance.
+    /// </summary>
+    public bool Covers(Guid siteId, IEnumerable<Guid> pathIds) =>
+        CoversSite(siteId) || (Spaces.Count > 0 && pathIds.Any(id => Spaces.Any(s => s.SpaceId == id && s.SiteId == siteId)));
+}
+
+/// <summary>Sitios enteros sobre los que aplica un permiso: todos (alcance de organización) o una lista.</summary>
 public sealed record SiteAccess(bool AllSites, IReadOnlySet<Guid> SiteIds)
 {
     public static readonly SiteAccess None = new(false, new HashSet<Guid>());
@@ -64,7 +92,11 @@ public interface ICurrentPermissions
     /// <summary>Tiene el permiso con alcance de organización.</summary>
     bool HasAtOrganization(string permission);
 
+    /// <summary>Sitios enteros donde aplica el permiso (sin los alcances de espacio).</summary>
     SiteAccess SitesFor(string permission);
+
+    /// <summary>Alcance completo del permiso: organización, sitios enteros y espacios.</summary>
+    PermissionScope ScopeFor(string permission);
 }
 
 public sealed class CurrentPermissions(RequestContext context) : ICurrentPermissions
@@ -82,10 +114,24 @@ public sealed class CurrentPermissions(RequestContext context) : ICurrentPermiss
         }
 
         var sites = context.Grants
-            .Where(g => g.Permission == permission && g.SiteId is not null)
+            .Where(g => g.Permission == permission && g.SiteId is not null && g.SpaceId is null)
             .Select(g => g.SiteId!.Value)
             .ToHashSet();
         return sites.Count == 0 ? SiteAccess.None : new SiteAccess(false, sites);
+    }
+
+    public PermissionScope ScopeFor(string permission)
+    {
+        var grants = context.Grants.Where(g => g.Permission == permission).ToList();
+        if (grants.Count == 0)
+        {
+            return PermissionScope.None;
+        }
+
+        return new PermissionScope(
+            grants.Any(g => g.SiteId is null),
+            grants.Where(g => g.SiteId is not null && g.SpaceId is null).Select(g => g.SiteId!.Value).ToHashSet(),
+            grants.Where(g => g.SpaceId is not null).Select(g => new ScopedSpace(g.SpaceId!.Value, g.SiteId!.Value)).Distinct().ToList());
     }
 }
 

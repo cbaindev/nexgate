@@ -74,6 +74,8 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             assignment.Property(r => r.CreatedAt).HasColumnName("created_at");
             assignment.Ignore(r => r.Scope);
             assignment.HasIndex(r => new { r.OrganizationId, r.UserId }).HasDatabaseName("ix_role_assignment_organization_user");
+            // Consulta de uso de un espacio como alcance (design de add-space-scoped-roles, decisión 6).
+            assignment.HasIndex(r => new { r.ScopeType, r.ScopeId }).HasDatabaseName("ix_role_assignment_scope");
             // Quitar la membresía quita sus asignaciones.
             assignment.HasOne<Membership>().WithMany()
                 .HasForeignKey(r => new { r.OrganizationId, r.UserId })
@@ -100,6 +102,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             invitation.Ignore(i => i.Scope);
             invitation.HasIndex(i => i.TokenHash).IsUnique().HasDatabaseName("ux_invitation_token_hash");
             invitation.HasIndex(i => i.OrganizationId).HasDatabaseName("ix_invitation_organization_id");
+            invitation.HasIndex(i => new { i.ScopeType, i.ScopeId }).HasDatabaseName("ix_invitation_scope");
         });
 
         modelBuilder.Entity<RefreshSession>(session =>

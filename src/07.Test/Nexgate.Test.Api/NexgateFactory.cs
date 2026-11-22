@@ -157,16 +157,18 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
     }
 
     /// <summary>Invita (como administrador de la organización) a un usuario nuevo con el rol y alcance indicados.</summary>
-    public async Task<TestUser> CreateUserAsync(Guid organizationId, string role, string scopeType = "organization", Guid? siteId = null)
+    public async Task<TestUser> CreateUserAsync(Guid organizationId, string role, string scopeType = "organization", Guid? siteId = null,
+        Guid? spaceId = null)
     {
-        var token = await InviteAsync(organizationId, NewEmail(role), role, scopeType, siteId);
+        var token = await InviteAsync(organizationId, NewEmail(role), role, scopeType, siteId, spaceId);
         return await AcceptAndSignInAsync(token.Token, token.Email, organizationId);
     }
 
-    public async Task<InvitationToken> InviteAsync(Guid organizationId, string email, string role, string scopeType = "organization", Guid? siteId = null)
+    public async Task<InvitationToken> InviteAsync(Guid organizationId, string email, string role, string scopeType = "organization",
+        Guid? siteId = null, Guid? spaceId = null)
     {
         using var admin = CreateClientFor(organizationId);
-        var response = await admin.PostAsJsonAsync("/api/v1/invitations", new { email, role, scopeType, siteId });
+        var response = await admin.PostAsJsonAsync("/api/v1/invitations", new { email, role, scopeType, siteId, spaceId });
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<InvitationToken>())!;
     }
@@ -201,7 +203,15 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
         }
     }
 
-    public sealed record InvitationToken(Guid Id, string Email, string Role, string ScopeType, Guid? SiteId, DateTimeOffset ExpiresAt, string Token);
+    public sealed record InvitationToken(
+        Guid Id,
+        string Email,
+        string Role,
+        string ScopeType,
+        Guid? SiteId,
+        Guid? SpaceId,
+        DateTimeOffset ExpiresAt,
+        string Token);
 
     private sealed record CreatedOrganization(Guid Id, string Name, string Status, InvitationToken AdministratorInvitation);
 

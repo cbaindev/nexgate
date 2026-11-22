@@ -25,14 +25,27 @@ public sealed record IdentityResult<T>(T? Value, IdentityError? Error)
 
 public sealed record TokenPair(string AccessToken, DateTimeOffset AccessTokenExpiresAt, string RefreshToken, Guid? OrganizationId);
 
-public sealed record InvitationInput(string? Email, string? Role, string? ScopeType, Guid? SiteId);
+public sealed record InvitationInput(string? Email, string? Role, string? ScopeType, Guid? SiteId, Guid? SpaceId = null);
 
 public sealed record AcceptedInvitation(Guid UserId, Guid OrganizationId);
 
-public sealed record RoleAssignmentInput(string? Role, string? ScopeType, Guid? SiteId, DateTimeOffset? ValidFrom, DateTimeOffset? ValidUntil);
+public sealed record RoleAssignmentInput(
+    string? Role,
+    string? ScopeType,
+    Guid? SiteId,
+    DateTimeOffset? ValidFrom,
+    DateTimeOffset? ValidUntil,
+    Guid? SpaceId = null);
 
 /// <summary>Asignación de rol con sus valores públicos (<see cref="RoleNames"/>, <see cref="ScopeTypeNames"/>).</summary>
-public sealed record RoleAssignmentDto(Guid Id, string Role, string ScopeType, Guid? SiteId, DateTimeOffset? ValidFrom, DateTimeOffset? ValidUntil);
+public sealed record RoleAssignmentDto(
+    Guid Id,
+    string Role,
+    string ScopeType,
+    Guid? SiteId,
+    Guid? SpaceId,
+    DateTimeOffset? ValidFrom,
+    DateTimeOffset? ValidUntil);
 
 public sealed record MemberDto(Guid UserId, string Email, IReadOnlyList<RoleAssignmentDto> RoleAssignments);
 

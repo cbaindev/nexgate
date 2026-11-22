@@ -79,14 +79,14 @@ Schema `identity`.
 |---|---|
 | `user_account` | id, email, normalized_email (único), password_hash, status (active, disabled), platform_operator, created_at. El vínculo con el Sujeto (`sujeto_ref`) llega con `add-people-registry`. |
 | `membership` | id, organization_id, user_id (único por organización), created_at |
-| `role_assignment` | id, organization_id, user_id, role (administrator, guard, resident, employee), scope_type (organization, site), scope_id, valid_from, valid_until, created_at |
+| `role_assignment` | id, organization_id, user_id, role (administrator, guard, resident, employee), scope_type (organization, site, space), scope_id (el sitio o el espacio), valid_from, valid_until, created_at |
 | `invitation` | id, organization_id, normalized_email, role, scope_type, scope_id, token_hash, expires_at, accepted_at, accepted_by, created_by, created_at |
 | `refresh_session` | id, user_id, active_organization_id, created_at, expires_at, revoked_at |
 | `refresh_token` | id, session_id, user_id, token_hash, created_at, used_at |
 
 `membership`, `role_assignment` e `invitation` tienen la política RLS estándar por `organization_id`; `membership` además deja ver al usuario sus propias membresías. `user_account`, `refresh_session` y `refresh_token` tienen RLS aislado por usuario: una cuenta sirve para varias organizaciones (D-04). Las búsquedas previas a la autenticación usan funciones `SECURITY DEFINER` acotadas. Los tokens se guardan solo como hash. Ver `openspec/specs/tenant-isolation` y `openspec/specs/authentication`.
 
-El alcance por espacio (`scope_type` = space) llega con `add-space-scoped-roles`. El operador de plataforma es una marca de la cuenta, no un rol de organización.
+Un alcance de espacio (`scope_type` = space) cubre ese espacio y todos sus descendientes, y permite leer el sitio que lo contiene, pero nunca gestionarlo. Un espacio usado como alcance de una asignación o de una invitación pendiente no se puede eliminar. El operador de plataforma es una marca de la cuenta, no un rol de organización.
 
 ### People (padrón global, fuera de RLS)
 
