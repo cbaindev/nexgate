@@ -16,6 +16,9 @@ internal sealed class OrganizationDirectory(IOrganizationStore store) : IOrganiz
 internal sealed class SiteDirectory(ISiteStore store) : ISiteDirectory
 {
     public Task<bool> ExistsAsync(Guid siteId, CancellationToken cancellationToken) => store.ExistsAsync(siteId, cancellationToken);
+
+    public async Task<string?> GetTimeZoneAsync(Guid siteId, CancellationToken cancellationToken) =>
+        (await store.FindAsync(siteId, cancellationToken))?.TimeZone;
 }
 
 /// <summary>Módulo Tenancy: organizaciones y sitios (D-02).</summary>

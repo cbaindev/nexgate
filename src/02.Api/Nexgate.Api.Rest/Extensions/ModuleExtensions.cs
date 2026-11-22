@@ -1,5 +1,7 @@
 using Nexgate.Common.BuildingBlocks.Persistence;
+using Nexgate.Service.Access;
 using Nexgate.Service.Identity;
+using Nexgate.Service.Occupancy;
 using Nexgate.Service.Spaces;
 using Nexgate.Service.Tenancy;
 
@@ -18,6 +20,8 @@ public static class ModuleExtensions
         services.AddTenancyService();
         services.AddIdentityService();
         services.AddSpacesService();
+        services.AddOccupancyService();
+        services.AddAccessService();
         services.AddNexgateAuthentication();
         services.AddNexgateRateLimiting();
         return services;

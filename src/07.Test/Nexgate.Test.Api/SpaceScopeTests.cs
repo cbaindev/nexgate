@@ -134,7 +134,7 @@ public class SpaceScopeTests
         var permissions = (await Json(await client.GetAsync("/api/v1/me/permissions"))).GetProperty("permissions").EnumerateArray().ToList();
 
         Assert.Equal(("space", b.TowerA), (invitation.ScopeType, invitation.SpaceId));
-        Assert.Equal(["organization.read", "sites.read", "spaces.read"], permissions.Select(p => p.GetProperty("name").GetString()));
+        Assert.Equal(["access.read", "organization.read", "sites.read", "spaces.read"], permissions.Select(p => p.GetProperty("name").GetString()));
         Assert.All(permissions, p =>
         {
             Assert.False(p.GetProperty("organization").GetBoolean());

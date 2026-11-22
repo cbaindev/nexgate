@@ -30,6 +30,10 @@
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Tenancy\Nexgate.Service.Tenancy.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Spaces.Contracts\Nexgate.Service.Spaces.Contracts.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Spaces\Nexgate.Service.Spaces.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Occupancy.Contracts\Nexgate.Service.Occupancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Occupancy\Nexgate.Service.Occupancy.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Access.Contracts\Nexgate.Service.Access.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Access\Nexgate.Service.Access.csproj" />
   </ItemGroup>
 
 </Project>

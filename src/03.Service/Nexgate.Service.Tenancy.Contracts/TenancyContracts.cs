@@ -37,6 +37,9 @@ public interface IOrganizationDirectory
 public interface ISiteDirectory
 {
     Task<bool> ExistsAsync(Guid siteId, CancellationToken cancellationToken);
+
+    /// <summary>Zona horaria IANA del sitio; null si el sitio no existe en la organización activa.</summary>
+    Task<string?> GetTimeZoneAsync(Guid siteId, CancellationToken cancellationToken);
 }
 
 /// <summary>Códigos de error estables del módulo.</summary>

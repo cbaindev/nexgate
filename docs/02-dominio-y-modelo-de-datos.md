@@ -108,26 +108,30 @@ Schema `spaces`.
 
 Las dos tablas tienen la política RLS estándar por `organization_id`. Las claves foráneas compuestas con `site_id` garantizan en la base que el padre, el destino y el origen son del mismo sitio, y con `ON DELETE RESTRICT` impiden eliminar un espacio con hijos o puntos relacionados. Ver `openspec/specs/space-tree` y `openspec/specs/access-points`.
 
-### Occupancy
+### Occupancy (sujetos implementados)
+
+Schema `occupancy`. El registro mínimo de sujetos llegó adelantado con `add-access-evaluator`; el resto llega con `add-occupancy-model`.
 
 | Tabla | Campos principales |
 |---|---|
-| `sujeto` | id, sitio_id, tipo (persona, anonimo), alias, creado_por |
+| `subject` (implementado) | id, organization_id, site_id, kind (person, anonymous), alias, created_by, created_at, updated_at. Sin datos personales; el vínculo con el padrón llega con `add-people-registry` |
 | `unidad` | id, sitio_id, tipo, nombre, estado_financiero (al_dia, moroso) |
 | `ocupacion` | id, unidad_id, espacio_id, rol (propietario, inquilino, residente, titular_empresa), desde, hasta |
 | `membresia` | id, unidad_id, sujeto_id, rol (titular, conyuge, hijo, empleado, ...), desde, hasta |
 | `plantilla_acceso_rol` | sitio_id, rol_ocupacion, perfil_acceso_id, puede_invitar, acceso_puerta_unidad |
 | `contacto` | id, owner_sujeto_id, sujeto_id, alias, telefono_cifrado, plantilla_horario_id |
 
-### Access
+### Access (horarios, credenciales y otorgamientos implementados)
+
+Schema `access`. Todas las tablas tienen la política RLS estándar por `organization_id`; sujeto, espacio y punto se validan por contrato (sin claves foráneas entre schemas). Ver `openspec/specs/access-grants`, `policy-compilation` y `access-evaluation`.
 
 | Tabla | Campos principales |
 |---|---|
-| `horario` | id, sitio_id, nombre, reglas (días y franjas, en zona horaria del sitio) |
+| `schedule` (implementado) | id, organization_id, site_id, name (único por sitio sin distinguir mayúsculas), windows (jsonb: días y franjas `[from, to)` en la zona horaria del sitio), created_at, updated_at |
 | `perfil_acceso` | id, sitio_id, nombre |
 | `perfil_acceso_item` | perfil_id, destino_tipo (espacio, punto), destino_id, horario_id, efecto (permitir, denegar) |
-| `credencial` | id, sujeto_id, tipo (rf, tarjeta, ble, qr, pin), valor_hash, estado, desde, hasta |
-| `otorgamiento` | id, sitio_id, sujeto_id, destino_tipo, destino_id, horario_id, desde, hasta, efecto, origen_tipo (ocupacion, invitacion, rol, manual), origen_id, usos_max, usos_restantes, estado |
+| `credential` (implementado) | id, organization_id, site_id, subject_id, type (rf, card, pin; QR y BLE llegan con sus cambios), value_hash (HMAC con la clave del sitio, único por sitio y tipo), valid_from, valid_until, created_at |
+| `grant` (implementado) | id, organization_id, site_id, subject_id, target_type (space, access_point), target_id, schedule_id, valid_from, valid_until, effect (allow, deny), origin_type (por ahora solo manual), origin_id, remaining_uses, created_by, created_at |
 | `invitacion` | id, ocupacion_id, creado_por_sujeto_id, sujeto_id, tipo (nominal, recurrente, temporal, guardia), destino_espacio_id, horario_id, desde, hasta, usos_max, estado, otorgamiento_id |
 
 ### Devices

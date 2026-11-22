@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexgate.Service.Occupancy.Contracts\Nexgate.Service.Occupancy.Contracts.csproj" />
+    <ProjectReference Include="..\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\04.Data\Nexgate.Data.Occupancy\Nexgate.Data.Occupancy.csproj" />
+    <ProjectReference Include="..\..\05.Domain\Nexgate.Domain.Occupancy\Nexgate.Domain.Occupancy.csproj" />
+    <ProjectReference Include="..\..\06.Common\Nexgate.Common.BuildingBlocks\Nexgate.Common.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>

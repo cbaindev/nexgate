@@ -57,6 +57,12 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
         return key.ExportECPrivateKeyPem();
     }
 
+    /// <summary>Clave maestra de credenciales de las pruebas (propia de la corrida, no la de desarrollo).</summary>
+    public static readonly string TestCredentialKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>Clave maestra de credenciales (<c>Access:CredentialKey</c>); null para no configurarla.</summary>
+    public string? CredentialKey { get; init; } = TestCredentialKey;
+
     public static string NewEmail(string prefix = "usuario") => $"{prefix}-{Guid.NewGuid():N}@nexgate.test";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -69,6 +75,11 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
         if (SigningKey is not null)
         {
             builder.UseSetting("Identity:Tokens:SigningKey", SigningKey);
+        }
+
+        if (CredentialKey is not null)
+        {
+            builder.UseSetting("Access:CredentialKey", CredentialKey);
         }
 
         builder.ConfigureTestServices(services =>

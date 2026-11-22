@@ -40,7 +40,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | 3c | `integrate-modules-into-layers` (agregado; **implementado y archivado**): lleva Tenancy, Identity y el contrato OpenAPI a la estructura de 1b, con controllers y sin cambios de contrato | `platform-api` | D-32, D-33, D-34 |
 | 4 | `add-spaces-and-access-points` (**implementado y archivado**): módulo Spaces con el árbol de espacios, los puntos de acceso, el camino a un destino y los permisos `spaces.read` y `spaces.manage` | `space-tree`, `access-points`, `role-scopes` | D-06, D-09 |
 | 4b | `add-space-scoped-roles` (agregado; **implementado y archivado**): rol con alcance de espacio que cubre su subárbol (D-03), separado del cambio 4 porque modifica Identity entero | `role-scopes`, `organization-membership`, `organizations-and-sites`, `space-tree`, `access-points` | D-03 |
-| 5 | `add-access-evaluator` | `access/grants`, `access/access-evaluation`, `access/policy-compilation` (con vectores de prueba compartidos con el firmware) | D-13 |
+| 5 | `add-access-evaluator` (**implementado y archivado**): sujetos mínimos (Occupancy, adelantados), horarios, credenciales con HMAC por sitio, otorgamientos, política compilada por punto de acceso, decisión y simulación, con vectores de prueba compartidos con el firmware | `subjects`, `access-grants`, `policy-compilation`, `access-evaluation`, `role-scopes`, `space-tree`, `access-points` | D-13, D-15 |
 | 6 | `add-device-sync-protocol` | `devices/device-provisioning`, `devices/policy-sync`, `events/event-ingestion` | D-30 |
 | 7 | `add-admin-panel-shell` (base de la SPA progresiva: instalación, navegación por rol y cliente generado del contrato) | `web/admin-shell` | D-05, D-29 |
 
@@ -49,7 +49,7 @@ El estado de cada cambio se ve con `openspec list`. Los nombres son propuestos y
 | # | Cambio | Capacidades (specs) | Decisiones |
 |---|---|---|---|
 | 8 | `add-people-registry` | `people/person-registry`, `people/subject-linking` | D-21, D-22, D-25 |
-| 9 | `add-occupancy-model` | `occupancy/units-and-occupancies`, `occupancy/memberships`, `occupancy/role-access-templates` | D-06, D-07, D-10, D-11 |
+| 9 | `add-occupancy-model` (el registro mínimo de sujetos ya existe, de `add-access-evaluator`: este cambio lo completa) | `occupancy/units-and-occupancies`, `occupancy/memberships`, `occupancy/role-access-templates` | D-06, D-07, D-10, D-11 |
 | 10 | `add-resident-onboarding` | `occupancy/resident-registration` | D-07 |
 | 11 | `add-guest-invitations` | `access/invitations`, `occupancy/contact-book`, `access/path-derivation` | D-08, D-09, D-14, D-15, D-23 |
 | 12 | `add-signed-qr-credentials` | `access/qr-credentials` | D-14 |

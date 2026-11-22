@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Access.Contracts\Nexgate.Service.Access.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

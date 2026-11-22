@@ -1,0 +1,47 @@
+{
+  "description": "Tarjeta válida, martes 10:00 local dentro de lunes a viernes de 8 a 17",
+  "policy": {
+    "format": 1,
+    "siteId": "0198a3d4-0000-7000-8000-000000000001",
+    "accessPointId": "0198a3d4-0000-7000-8000-000000000002",
+    "timeZone": "America/Argentina/Cordoba",
+    "offsets": [
+      {
+        "from": null,
+        "seconds": -10800
+      }
+    ],
+    "windows": [
+      [
+        {
+          "days": 31,
+          "from": 480,
+          "to": 1020
+        }
+      ]
+    ],
+    "credentials": [
+      {
+        "hash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+        "from": null,
+        "to": null
+      }
+    ],
+    "entries": [
+      {
+        "credential": 0,
+        "window": 0,
+        "from": null,
+        "to": null,
+        "uses": null,
+        "deny": false
+      }
+    ]
+  },
+  "credentialHash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+  "at": "2026-11-24T13:00:00Z",
+  "expected": {
+    "decision": "allow",
+    "reason": "allowed"
+  }
+}

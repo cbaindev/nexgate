@@ -41,7 +41,7 @@ The system SHALL derive a caller's permissions only from its role assignments in
 
 #### Scenario: Permissions by role
 - **WHEN** a request is evaluated
-- **THEN** the administrator role grants reading the organization, reading and managing sites, reading and managing members, and reading and managing spaces and access points; the guard role grants reading the organization, reading sites and reading spaces and access points; the resident and employee roles grant reading the organization and reading sites
+- **THEN** the administrator role grants reading the organization, reading and managing sites, reading and managing members, and reading and managing spaces and access points, and reading and managing access data (subjects, schedules, credentials, grants, compiled policies and simulations); the guard role grants reading the organization, reading sites, reading spaces and access points, and reading access data; the resident and employee roles grant reading the organization and reading sites
 
 #### Scenario: Site scope limits space permissions
 - **WHEN** a guard whose only assignment has the scope of site A reads the spaces or access points of site B of the same organization

@@ -1,0 +1,55 @@
+{
+  "description": "La denegación de fin de semana aplica un sábado aunque haya un permiso sin ventana",
+  "policy": {
+    "format": 1,
+    "siteId": "0198a3d4-0000-7000-8000-000000000001",
+    "accessPointId": "0198a3d4-0000-7000-8000-000000000002",
+    "timeZone": "America/Argentina/Cordoba",
+    "offsets": [
+      {
+        "from": null,
+        "seconds": -10800
+      }
+    ],
+    "windows": [
+      [
+        {
+          "days": 96,
+          "from": 0,
+          "to": 1440
+        }
+      ]
+    ],
+    "credentials": [
+      {
+        "hash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+        "from": null,
+        "to": null
+      }
+    ],
+    "entries": [
+      {
+        "credential": 0,
+        "window": null,
+        "from": null,
+        "to": null,
+        "uses": null,
+        "deny": false
+      },
+      {
+        "credential": 0,
+        "window": 0,
+        "from": null,
+        "to": null,
+        "uses": null,
+        "deny": true
+      }
+    ]
+  },
+  "credentialHash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+  "at": "2026-11-28T13:00:00Z",
+  "expected": {
+    "decision": "deny",
+    "reason": "explicit_deny"
+  }
+}

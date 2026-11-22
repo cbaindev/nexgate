@@ -84,6 +84,7 @@ public static class SpacesErrorCodes
     public const string SpaceNameConflict = "space_name_conflict";
     public const string SpaceHasDependents = "space_has_dependents";
     public const string AccessPointNameConflict = "access_point_name_conflict";
+    public const string AccessPointInUse = "access_point_in_use";
 }
 
 /// <summary>
@@ -100,6 +101,12 @@ public interface ISpaceDirectory
 
     Task<AccessPointDto?> GetAccessPointAsync(Guid accessPointId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// El espacio y todos sus descendientes; null si el espacio no existe. Un otorgamiento a cualquiera de ellos cubre un
+    /// punto que da acceso a este espacio.
+    /// </summary>
+    Task<IReadOnlyList<Guid>?> GetSubtreeIdsAsync(Guid spaceId, CancellationToken cancellationToken);
+
     /// <summary>Puntos del camino al espacio, desde la raíz; null si el espacio no existe.</summary>
     Task<IReadOnlyList<AccessPathEntryDto>?> GetAccessPathAsync(Guid spaceId, CancellationToken cancellationToken);
 }
@@ -111,4 +118,10 @@ public interface ISpaceDirectory
 public interface ISpaceUsage
 {
     Task<bool> IsUsedAsync(Guid spaceId, CancellationToken cancellationToken);
+}
+
+/// <summary>Uso de un punto de acceso por otro módulo (por ejemplo, como destino de un otorgamiento).</summary>
+public interface IAccessPointUsage
+{
+    Task<bool> IsUsedAsync(Guid accessPointId, CancellationToken cancellationToken);
 }

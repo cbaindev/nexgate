@@ -26,6 +26,20 @@ internal sealed class SpaceDirectory(ISpaceStore spaces, IAccessPointStore point
 
     public Task<IReadOnlyList<AccessPathEntryDto>?> GetAccessPathAsync(Guid spaceId, CancellationToken cancellationToken) =>
         paths.GetAsync(spaceId, cancellationToken);
+
+    public async Task<IReadOnlyList<Guid>?> GetSubtreeIdsAsync(Guid spaceId, CancellationToken cancellationToken)
+    {
+        if (await spaces.FindAsync(spaceId, cancellationToken) is not { } root)
+        {
+            return null;
+        }
+
+        // El path de cada espacio tiene a sus ancestros: los descendientes son los que tienen a la raíz en su camino.
+        return (await spaces.ListBySiteAsync(root.SiteId, cancellationToken))
+            .Where(s => s.PathIds.Contains(spaceId))
+            .Select(s => s.Id)
+            .ToList();
+    }
 }
 
 /// <summary>Módulo Spaces: árbol de espacios y puntos de acceso (D-06). Requiere el módulo Tenancy registrado.</summary>

@@ -36,7 +36,7 @@ Una sola aplicación .NET con módulos claros. Cada módulo es dueño de su **sc
 | Identity | Usuarios, login, roles por alcance |
 | People | Padrón único, vínculos Sujeto↔Persona, derechos ARCO |
 | Spaces | Árbol de espacios y puntos de acceso |
-| Occupancy | Unidades, ocupaciones, membresías, plantillas, contactos |
+| Occupancy | Sujetos, unidades, ocupaciones, membresías, plantillas, contactos |
 | Access | Horarios, perfiles, credenciales, otorgamientos, invitaciones, evaluador y compilador |
 | Devices | Dispositivos, comandos, políticas publicadas, firmware |
 | Events | Eventos, presencia, novedades |
@@ -54,7 +54,7 @@ src/02.Api/Nexgate.Api.Rest/Controllers/Access/    controllers del módulo
 src/02.Api/Nexgate.Api.Rest/Models/Access/         modelos de solicitud HTTP con su validación
 ```
 
-Tenancy, Identity y Spaces ya siguen esta estructura (`integrate-modules-into-layers`, `add-spaces-and-access-points`).
+Tenancy, Identity, Spaces, Occupancy (por ahora solo sujetos) y Access ya siguen esta estructura (`integrate-modules-into-layers`, `add-spaces-and-access-points`, `add-access-evaluator`). Access depende de los contratos de Tenancy, Spaces y Occupancy; ningún módulo anterior depende de Access, que implementa los puertos de uso de espacios, puntos de acceso y sujetos.
 
 Sentido de dependencias: `Api → Service → Data → Domain`, con `Common` disponible para `Service`, `Data` y los procesos. Cualquier capa de un módulo puede usar el `Contracts` de su propio módulo (por ejemplo, `Domain.Identity` usa los nombres de roles y permisos); `Contracts` no referencia nada. Entre módulos, solo `Service.<M> → Service.<Otro>.Contracts`: `Domain` y `Data` no ven a otros módulos. La persistencia de un módulo solo la usa su capa de servicio. Cuando un store necesita verificar algo de otro módulo dentro de su transacción, define un puerto propio que implementa su servicio con los contratos del otro módulo (por ejemplo, `IOrganizationReferences` en `Data.Identity`). Al revés, cuando un módulo necesita saber si otros usan uno de sus datos, define el puerto en su `Contracts` y los demás lo implementan (por ejemplo, `ISpaceUsage` de Spaces, que implementa Identity para no eliminar un espacio usado como alcance de un rol). Ningún proyecto de módulo usa el framework web. La API referencia las capas internas únicamente para componerlas (`Extensions/ModuleExtensions.cs`, la autenticación y el límite de intentos); sus controllers solo usan los contratos y sus propios modelos de solicitud (D-33).
 

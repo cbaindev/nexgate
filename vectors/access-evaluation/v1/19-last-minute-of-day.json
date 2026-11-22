@@ -1,0 +1,47 @@
+{
+  "description": "Martes 23:59 local dentro de una ventana hasta las 24:00",
+  "policy": {
+    "format": 1,
+    "siteId": "0198a3d4-0000-7000-8000-000000000001",
+    "accessPointId": "0198a3d4-0000-7000-8000-000000000002",
+    "timeZone": "America/Argentina/Cordoba",
+    "offsets": [
+      {
+        "from": null,
+        "seconds": -10800
+      }
+    ],
+    "windows": [
+      [
+        {
+          "days": 2,
+          "from": 1380,
+          "to": 1440
+        }
+      ]
+    ],
+    "credentials": [
+      {
+        "hash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+        "from": null,
+        "to": null
+      }
+    ],
+    "entries": [
+      {
+        "credential": 0,
+        "window": 0,
+        "from": null,
+        "to": null,
+        "uses": null,
+        "deny": false
+      }
+    ]
+  },
+  "credentialHash": "Q0FSRC1BLWhtYWMtZGUtcHJ1ZWJh",
+  "at": "2026-11-25T02:59:00Z",
+  "expected": {
+    "decision": "allow",
+    "reason": "allowed"
+  }
+}

@@ -111,7 +111,7 @@ public class MembershipTests
         var permissions = await Json(await client.GetAsync("/api/v1/me/permissions"));
 
         Assert.Equal(organization, guard.Tokens.OrganizationId);
-        Assert.Equal(["organization.read", "sites.read", "spaces.read"],
+        Assert.Equal(["access.read", "organization.read", "sites.read", "spaces.read"],
             permissions.GetProperty("permissions").EnumerateArray().Select(p => p.GetProperty("name").GetString()!).ToArray());
     }
 

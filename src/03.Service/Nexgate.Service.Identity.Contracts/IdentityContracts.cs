@@ -17,6 +17,12 @@ public static class Permissions
 
     /// <summary>Crear, modificar y eliminar espacios y puntos de acceso.</summary>
     public const string SpacesManage = "spaces.manage";
+
+    /// <summary>Leer sujetos, horarios, credenciales (sin su valor), otorgamientos, políticas compiladas y simular pasadas.</summary>
+    public const string AccessRead = "access.read";
+
+    /// <summary>Crear, modificar y eliminar sujetos, horarios, credenciales y otorgamientos.</summary>
+    public const string AccessManage = "access.manage";
 }
 
 /// <summary>Valores públicos de los roles (D-05).</summary>

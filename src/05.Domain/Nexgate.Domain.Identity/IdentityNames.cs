@@ -59,9 +59,10 @@ public static class PermissionCatalog
         [Role.Administrator] =
         [
             Permissions.OrganizationRead, Permissions.SitesRead, Permissions.SitesManage,
-            Permissions.MembersRead, Permissions.MembersManage, Permissions.SpacesRead, Permissions.SpacesManage
+            Permissions.MembersRead, Permissions.MembersManage, Permissions.SpacesRead, Permissions.SpacesManage,
+            Permissions.AccessRead, Permissions.AccessManage
         ],
-        [Role.Guard] = [Permissions.OrganizationRead, Permissions.SitesRead, Permissions.SpacesRead],
+        [Role.Guard] = [Permissions.OrganizationRead, Permissions.SitesRead, Permissions.SpacesRead, Permissions.AccessRead],
         [Role.Resident] = [Permissions.OrganizationRead, Permissions.SitesRead],
         [Role.Employee] = [Permissions.OrganizationRead, Permissions.SitesRead]
     };

@@ -204,8 +204,12 @@ internal sealed class SpaceService(
         };
 }
 
-internal sealed class AccessPointService(IAccessPointStore store, ISpaceStore spaces, ISiteReferences sites, TimeProvider clock)
-    : IAccessPointService
+internal sealed class AccessPointService(
+    IAccessPointStore store,
+    ISpaceStore spaces,
+    ISiteReferences sites,
+    IEnumerable<IAccessPointUsage> usages,
+    TimeProvider clock) : IAccessPointService
 {
     public async Task<SpacesResult<IReadOnlyList<AccessPointDto>>> ListAsync(Guid siteId, CancellationToken cancellationToken)
     {
@@ -290,6 +294,15 @@ internal sealed class AccessPointService(IAccessPointStore store, ISpaceStore sp
         if (await store.FindAsync(id, cancellationToken) is not { } point)
         {
             return SpacesResult<Guid>.NotFound();
+        }
+
+        foreach (var usage in usages)
+        {
+            if (await usage.IsUsedAsync(id, cancellationToken))
+            {
+                return SpacesResult<Guid>.Fail(SpacesMapping.Conflict(SpacesErrorCodes.AccessPointInUse,
+                    "El punto de acceso es destino de un otorgamiento."));
+            }
         }
 
         store.Remove(point);

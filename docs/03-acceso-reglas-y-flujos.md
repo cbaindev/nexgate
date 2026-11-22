@@ -12,39 +12,48 @@ El **origen** dice por qué existe: `ocupacion`, `invitacion`, `rol` o `manual`.
 
 ```
 puede_pasar(credencial, punto_acceso, instante):
-  1. La credencial debe estar activa y vigente.            → si no, DENEGAR (credencial_invalida)
-  2. Reunir los otorgamientos vigentes del sujeto cuyo
-     destino cubre al punto de acceso.
-  3. Si alguno tiene efecto DENEGAR.                       → DENEGAR (denegacion_explicita)
-  4. Descartar los que no cumplen horario (zona horaria
-     del sitio) o no tienen usos restantes.
+  1. La credencial debe estar activa y vigente.            → si no, DENEGAR (credential_invalid)
+  2. Reunir los otorgamientos del sujeto cuyo destino
+     cubre al punto de acceso y que aplican en el instante:
+     vigencia y horario (zona horaria del sitio).
+  3. Si alguno de ellos tiene efecto DENEGAR.              → DENEGAR (explicit_deny)
+  4. Descartar los permisos sin usos restantes.
   5. Descartar los condicionados por morosidad (ver 6).
   6. Si la zona tiene presencia en modo duro y el sujeto
      ya figura dentro.                                     → DENEGAR (antipassback)
-  7. Si queda al menos uno.                                → PERMITIR
-     Si no.                                                → DENEGAR (sin_permiso)
+  7. Si queda al menos un permiso.                         → PERMITIR (allowed)
+     Si no.                                                → DENEGAR (no_permission)
 ```
+
+La denegación también respeta su horario: una regla "no los fines de semana" aplica solo el fin de semana, y dentro de su horario gana siempre (D-13). Los pasos 5 y 6 llegan con `add-delinquency-restrictions` y `add-presence-and-incidents`; `add-access-evaluator` implementa el resto.
 
 **Cuándo un otorgamiento cubre un punto:** si el `hacia` del punto es el destino del otorgamiento o uno de sus ancestros (el camino al destino, ver documento 02). Un otorgamiento a un destino que es un **punto** cubre solo ese punto.
 
-Este mismo algoritmo corre en dos lugares: en el backend (para simulaciones y auditoría) y en el firmware (con la política compilada, sin red).
+Este mismo algoritmo corre en dos lugares: en el backend (para simulaciones y auditoría) y en el firmware (con la política compilada, sin red). Los dos lo ejecutan sobre la política compilada y se prueban con los mismos vectores (`vectors/access-evaluation/`).
 
 ## 3. Compilación de políticas hacia los dispositivos
 
 El backend no manda "reglas" a las puertas: manda una **política compilada** por dispositivo.
 
-- Un compilador toma los otorgamientos vigentes y calcula, para cada punto de acceso del dispositivo, la lista de credenciales que pueden abrir y en qué ventanas.
-- Cada política tiene un número de **versión monotónico** y un hash. El dispositivo informa qué versión tiene; si hay una más nueva, la descarga (completa o como delta).
+- Un compilador toma los otorgamientos que no vencieron y calcula, para cada punto de acceso, la lista de credenciales que pueden abrir y en qué ventanas (`add-access-evaluator`). El dispositivo junta las políticas de sus puntos (`add-device-sync-protocol`).
+- Cada política tiene un hash de su contenido canónico; el número de **versión monotónico** lo agrega el cambio de dispositivos. El dispositivo informa qué versión tiene; si hay una más nueva, la descarga (completa o como delta).
 - Se recompila **solo lo afectado**: un evento interno (outbox) como "otorgamiento creado", "ocupación cerrada" o "estado financiero cambiado" dispara la recompilación de los dispositivos involucrados.
-- Las credenciales se guardan en el dispositivo como **hash con clave del dispositivo** (HMAC), no en claro.
+- Las credenciales se guardan como **HMAC con una clave por sitio**, derivada de una clave maestra del backend, nunca en claro. Los dispositivos del sitio reciben la clave del sitio al aprovisionarse y calculan el mismo HMAC sobre lo que leen. Se descartó la clave por dispositivo: obligaba a guardar el valor de las credenciales de forma reversible para recompilar.
 
-Entrada típica de la lista compilada:
+Formato v1 de la política de un punto de acceso (detalle en `vectors/access-evaluation/README.md`):
 
 ```json
-{ "c": "<hmac de la credencial>", "w": 3, "f": 1730000000, "t": 1735689600, "u": 1, "x": 0 }
+{
+  "format": 1, "siteId": "…", "accessPointId": "…", "timeZone": "America/Argentina/Cordoba",
+  "offsets": [ { "from": null, "seconds": -10800 } ],
+  "windows": [ [ { "days": 31, "from": 480, "to": 1020 } ] ],
+  "credentials": [ { "hash": "<hmac base64url>", "from": null, "to": null } ],
+  "entries": [ { "credential": 0, "window": 0, "from": null, "to": null, "uses": null, "deny": false } ],
+  "hash": "<sha256>"
+}
 ```
 
-`w` es el índice de la ventana horaria (tabla pequeña de horarios en la política), `f`/`t` desde/hasta, `u` usos restantes y `x` banderas.
+`offsets` permite calcular la hora local sin base de zonas horarias; `windows` son horarios (máscara de días, bit 0 = lunes, y minutos locales `[from, to)`); `credentials` son todas las credenciales activas del sitio, así una credencial válida sin permiso en esa puerta se distingue de una desconocida; cada entrada une una credencial con un otorgamiento que cubre el punto, con la intersección de vigencias y los usos restantes.
 
 ## 3.1 Credenciales sin lista: QR firmado
 

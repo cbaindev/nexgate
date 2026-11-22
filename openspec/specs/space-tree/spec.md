@@ -79,10 +79,10 @@ The system SHALL allow changing the name, the type and the common flag of a spac
 - **THEN** the system responds with HTTP 400 and a problem details document that lists the type field
 
 ### Requirement: Space deletion
-The system SHALL allow deleting a space only when it has no child spaces, no access point gives access to it or is entered from it, and no role assignment or pending invitation has it as scope.
+The system SHALL allow deleting a space only when it has no child spaces, no access point gives access to it or is entered from it, no role assignment or pending invitation has it as scope, and no grant has it as target.
 
 #### Scenario: Delete a leaf space
-- **WHEN** a caller with permission to manage spaces deletes a space without children and without related access points, role assignments or pending invitations
+- **WHEN** a caller with permission to manage spaces deletes a space without children and without related access points, role assignments, pending invitations or grants
 - **THEN** the system responds with HTTP 204 and the space no longer exists
 
 #### Scenario: Delete a space with children or access points
@@ -96,6 +96,10 @@ The system SHALL allow deleting a space only when it has no child spaces, no acc
 #### Scenario: Delete a space after its role scope is revoked
 - **WHEN** the only role assignment with the scope of a leaf space is revoked and a caller deletes that space
 - **THEN** the system responds with HTTP 204
+
+#### Scenario: Delete a space targeted by a grant
+- **WHEN** a caller deletes a space that is the target of a grant, ended or not
+- **THEN** the system responds with HTTP 409, the same problem details document as for a space with children, and the space is kept
 
 ### Requirement: Space permissions and site scope
 The system SHALL require the spaces read permission to list and read spaces and the spaces manage permission to create, modify and delete them, SHALL apply a site-scoped permission only to the spaces of that site, and SHALL apply a space-scoped permission only to that space and its descendants.
