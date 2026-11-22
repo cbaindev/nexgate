@@ -124,10 +124,16 @@ public class RoleScopeTests
         var organization = await factory.CreateOrganizationAsync();
 
         var admin = await PermissionsAsync(factory, factory.Administrator(organization).Tokens.AccessToken);
-        Assert.Equal(["members.manage", "members.read", "organization.read", "sites.manage", "sites.read"], admin.Keys.Order().ToArray());
+        Assert.Equal(
+            ["members.manage", "members.read", "organization.read", "sites.manage", "sites.read", "spaces.manage", "spaces.read"],
+            admin.Keys.Order().ToArray());
         Assert.All(admin.Values, p => Assert.True(p.GetProperty("organization").GetBoolean()));
 
-        foreach (var role in new[] { "guard", "resident", "employee" })
+        var guard = await factory.CreateUserAsync(organization, "guard");
+        Assert.Equal(["organization.read", "sites.read", "spaces.read"],
+            (await PermissionsAsync(factory, guard.Tokens.AccessToken)).Keys.Order().ToArray());
+
+        foreach (var role in new[] { "resident", "employee" })
         {
             var user = await factory.CreateUserAsync(organization, role);
             var permissions = await PermissionsAsync(factory, user.Tokens.AccessToken);

@@ -16,7 +16,7 @@ public class ArchitectureTests
         Assert.Contains(projects, p => p.Name == "Nexgate.Api.Rest");
         Assert.Contains(projects, p => p.Name == "Nexgate.Api.Workers");
         Assert.Contains(projects, p => p.Name == "Nexgate.Common.BuildingBlocks");
-        foreach (var module in new[] { "Tenancy", "Identity" })
+        foreach (var module in new[] { "Tenancy", "Identity", "Spaces" })
         {
             foreach (var layer in new[] { "Contracts", "Service", "Data", "Domain" })
             {

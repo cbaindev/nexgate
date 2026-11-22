@@ -42,9 +42,9 @@ erDiagram
 
 ## Árbol de espacios y puntos de acceso
 
-- `Espacio` es un árbol (tabla con `padre_id` y un `path` tipo `ltree`). Tipos: sitio, torre, piso, unidad, área común, estacionamiento, etc.
-- Un `PuntoAcceso` (puerta, portón, barrera, ascensor) tiene un solo atributo espacial importante: **hacia qué espacio da acceso**.
-- **Derivación del camino a un destino:** los puntos permitidos para llegar al espacio *E* son todos los puntos cuyo `hacia` sea *E* o alguno de sus **ancestros**. Es una consulta sobre el árbol, sin grafos.
+- `Espacio` es un árbol por sitio (tabla con `padre_id` y un `path` tipo `ltree`). La raíz es de tipo sitio y sin padre, y la crea el administrador como primer espacio del sitio; los puntos del perímetro dan acceso a la raíz. Tipos: sitio (solo la raíz), torre, piso, unidad, área común, estacionamiento, lote y zona. Hasta 10 niveles debajo de la raíz.
+- Un `PuntoAcceso` (puerta, portón, barrera, molinete, ascensor) tiene un solo atributo espacial importante: **hacia qué espacio da acceso**. El modo de fallo se elige siempre de forma explícita.
+- **Derivación del camino a un destino:** los puntos permitidos para llegar al espacio *E* son todos los puntos cuyo `hacia` sea *E* o alguno de sus **ancestros**. Es una consulta sobre el árbol, sin grafos: el `path` de *E* ya tiene los identificadores de sus ancestros (`GET /api/v1/spaces/{id}/access-path`).
 
 Ejemplo para llegar al Depto 5B:
 
@@ -86,7 +86,7 @@ Schema `identity`.
 
 `membership`, `role_assignment` e `invitation` tienen la política RLS estándar por `organization_id`; `membership` además deja ver al usuario sus propias membresías. `user_account`, `refresh_session` y `refresh_token` tienen RLS aislado por usuario: una cuenta sirve para varias organizaciones (D-04). Las búsquedas previas a la autenticación usan funciones `SECURITY DEFINER` acotadas. Los tokens se guardan solo como hash. Ver `openspec/specs/tenant-isolation` y `openspec/specs/authentication`.
 
-El alcance por espacio (`scope_type` = space) llega con `add-spaces-and-access-points`. El operador de plataforma es una marca de la cuenta, no un rol de organización.
+El alcance por espacio (`scope_type` = space) llega con `add-space-scoped-roles`. El operador de plataforma es una marca de la cuenta, no un rol de organización.
 
 ### People (padrón global, fuera de RLS)
 
@@ -97,12 +97,16 @@ El alcance por espacio (`scope_type` = space) llega con `add-spaces-and-access-p
 | `persona_dato_verificado` | persona_id, nombre_cifrado (para verificación en puerta por guardia) |
 | `sujeto_vinculo` | sujeto_id, persona_id (solo lo ve el módulo People) |
 
-### Spaces
+### Spaces (implementado)
+
+Schema `spaces`.
 
 | Tabla | Campos principales |
 |---|---|
-| `espacio` | id, sitio_id, padre_id, path, tipo, nombre, es_comun, modo_presencia (ninguno, suave, duro), aforo_max, cupo_invitados_unidad (reservado), restringir_por_morosidad |
-| `punto_acceso` | id, sitio_id, nombre, hacia_espacio_id, desde_espacio_id (opcional), tipo, modo_fallo (fail_safe, fail_secure), dispositivo_id, canal |
+| `space` | id, organization_id, site_id, parent_id (nulo solo en la raíz), path (`ltree`), type (site, building, floor, unit, common_area, parking, lot, zone), name (único entre hermanos sin distinguir mayúsculas), is_common, created_at, updated_at. Llegan con sus cambios: modo de presencia (ninguno, suave, duro), aforo máximo, cupo de invitados por unidad (reservado) y restricción por morosidad. |
+| `access_point` | id, organization_id, site_id, name (único en el sitio sin distinguir mayúsculas), type (door, gate, barrier, turnstile, elevator), to_space_id, from_space_id (opcional), fail_mode (fail_safe, fail_secure), created_at, updated_at. El dispositivo y su canal llegan con `add-device-sync-protocol`. |
+
+Las dos tablas tienen la política RLS estándar por `organization_id`. Las claves foráneas compuestas con `site_id` garantizan en la base que el padre, el destino y el origen son del mismo sitio, y con `ON DELETE RESTRICT` impiden eliminar un espacio con hijos o puntos relacionados. Ver `openspec/specs/space-tree` y `openspec/specs/access-points`.
 
 ### Occupancy
 

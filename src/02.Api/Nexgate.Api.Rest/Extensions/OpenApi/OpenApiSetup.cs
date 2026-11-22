@@ -108,7 +108,7 @@ public static class OpenApiSetup
     /// <summary>
     /// En los modelos de solicitud (records), los controllers de ASP.NET Core exigen los atributos de validación sobre los parámetros del constructor,
     /// pero el generador del documento solo los lee de las propiedades. Se copian los límites de longitud del parámetro
-    /// asociado a cada propiedad, para que el contrato los declare igual.
+    /// asociado a cada propiedad (longitudes y valores permitidos), para que el contrato los declare igual.
     /// </summary>
     private static Task ConstructorParameterLengths(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken _)
     {
@@ -119,14 +119,22 @@ public static class OpenApiSetup
 
         foreach (var property in context.JsonTypeInfo.Properties)
         {
-            var length = property.AssociatedParameter?.AttributeProvider?
-                .GetCustomAttributes(typeof(StringLengthAttribute), inherit: false)
-                .OfType<StringLengthAttribute>()
-                .FirstOrDefault();
-            if (length is not null && properties.TryGetValue(property.Name, out var target) && target is OpenApiSchema concrete)
+            if (!properties.TryGetValue(property.Name, out var target) || target is not OpenApiSchema concrete)
+            {
+                continue;
+            }
+
+            var attributes = property.AssociatedParameter?.AttributeProvider?.GetCustomAttributes(inherit: false) ?? [];
+            if (attributes.OfType<StringLengthAttribute>().FirstOrDefault() is { } length)
             {
                 concrete.MaxLength = length.MaximumLength;
                 concrete.MinLength = length.MinimumLength;
+            }
+
+            // Los valores permitidos (tipos, roles, modo de fallo) quedan como enum en el contrato.
+            if (attributes.OfType<AllowedValuesAttribute>().FirstOrDefault() is { } allowed)
+            {
+                concrete.Enum = allowed.Values.Select(v => (System.Text.Json.Nodes.JsonNode)System.Text.Json.Nodes.JsonValue.Create(v?.ToString())!).ToList();
             }
         }
 

@@ -11,6 +11,12 @@ public static class Permissions
     public const string SitesManage = "sites.manage";
     public const string MembersRead = "members.read";
     public const string MembersManage = "members.manage";
+
+    /// <summary>Leer espacios y puntos de acceso.</summary>
+    public const string SpacesRead = "spaces.read";
+
+    /// <summary>Crear, modificar y eliminar espacios y puntos de acceso.</summary>
+    public const string SpacesManage = "spaces.manage";
 }
 
 /// <summary>Valores públicos de los roles (D-05).</summary>
@@ -24,7 +30,7 @@ public static class RoleNames
     public static readonly IReadOnlyList<string> All = [Administrator, Guard, Resident, Employee];
 }
 
-/// <summary>Valores públicos del tipo de alcance de un rol (D-03). El alcance por espacio llega con Spaces.</summary>
+/// <summary>Valores públicos del tipo de alcance de un rol (D-03). El alcance por espacio llega con add-space-scoped-roles.</summary>
 public static class ScopeTypeNames
 {
     public const string Organization = "organization";

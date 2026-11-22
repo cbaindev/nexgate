@@ -1,5 +1,6 @@
 using Nexgate.Common.BuildingBlocks.Persistence;
 using Nexgate.Service.Identity;
+using Nexgate.Service.Spaces;
 using Nexgate.Service.Tenancy;
 
 namespace Nexgate.Api.Rest.Extensions;
@@ -16,6 +17,7 @@ public static class ModuleExtensions
         services.AddDatabaseMigrator();
         services.AddTenancyService();
         services.AddIdentityService();
+        services.AddSpacesService();
         services.AddNexgateAuthentication();
         services.AddNexgateRateLimiting();
         return services;

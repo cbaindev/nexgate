@@ -28,6 +28,8 @@
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Identity\Nexgate.Service.Identity.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Tenancy.Contracts\Nexgate.Service.Tenancy.Contracts.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Tenancy\Nexgate.Service.Tenancy.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Spaces.Contracts\Nexgate.Service.Spaces.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Spaces\Nexgate.Service.Spaces.csproj" />
   </ItemGroup>
 
 </Project>

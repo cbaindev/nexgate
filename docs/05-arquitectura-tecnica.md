@@ -54,7 +54,7 @@ src/02.Api/Nexgate.Api.Rest/Controllers/Access/    controllers del módulo
 src/02.Api/Nexgate.Api.Rest/Models/Access/         modelos de solicitud HTTP con su validación
 ```
 
-Tenancy e Identity ya siguen esta estructura (`integrate-modules-into-layers`).
+Tenancy, Identity y Spaces ya siguen esta estructura (`integrate-modules-into-layers`, `add-spaces-and-access-points`).
 
 Sentido de dependencias: `Api → Service → Data → Domain`, con `Common` disponible para `Service`, `Data` y los procesos. Cualquier capa de un módulo puede usar el `Contracts` de su propio módulo (por ejemplo, `Domain.Identity` usa los nombres de roles y permisos); `Contracts` no referencia nada. Entre módulos, solo `Service.<M> → Service.<Otro>.Contracts`: `Domain` y `Data` no ven a otros módulos. La persistencia de un módulo solo la usa su capa de servicio. Cuando un store necesita verificar algo de otro módulo dentro de su transacción, define un puerto propio que implementa su servicio con los contratos del otro módulo (por ejemplo, `IOrganizationReferences` en `Data.Identity`). Ningún proyecto de módulo usa el framework web. La API referencia las capas internas únicamente para componerlas (`Extensions/ModuleExtensions.cs`, la autenticación y el límite de intentos); sus controllers solo usan los contratos y sus propios modelos de solicitud (D-33).
 

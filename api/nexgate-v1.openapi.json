@@ -6,6 +6,258 @@
     "version": "v1"
   },
   "paths": {
+    "/api/v1/access-points/{id}": {
+      "get": {
+        "tags": [
+          "AccessPoints"
+        ],
+        "summary": "Obtener un punto de acceso",
+        "description": "Un punto de un sitio fuera del alcance responde igual que uno inexistente (404).",
+        "operationId": "getAccessPoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessPointDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "AccessPoints"
+        ],
+        "summary": "Modificar un punto de acceso",
+        "description": "Cambia todos sus atributos salvo el sitio.",
+        "operationId": "updateAccessPoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessPointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessPointDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "AccessPoints"
+        ],
+        "summary": "Eliminar un punto de acceso",
+        "operationId": "deleteAccessPoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operación correcta, sin contenido."
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "tags": [
@@ -1391,6 +1643,724 @@
           }
         ]
       }
+    },
+    "/api/v1/sites/{siteId}/access-points": {
+      "get": {
+        "tags": [
+          "AccessPoints"
+        ],
+        "summary": "Listar los puntos de acceso de un sitio",
+        "description": "Ordenados por nombre.",
+        "operationId": "listAccessPoints",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessPointDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "AccessPoints"
+        ],
+        "summary": "Crear un punto de acceso",
+        "description": "El espacio al que da acceso y el de origen deben ser del mismo sitio; el modo de fallo es obligatorio.",
+        "operationId": "createAccessPoint",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessPointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recurso creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessPointDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/sites/{siteId}/spaces": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Listar los espacios de un sitio",
+        "description": "En orden de árbol: cada espacio después de su padre y los hermanos por nombre.",
+        "operationId": "listSpaces",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpaceDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Crear un espacio",
+        "description": "Sin padre es la raíz del sitio y debe ser de tipo site; un sitio tiene una sola raíz.",
+        "operationId": "createSpace",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recurso creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/spaces/{id}": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Obtener un espacio",
+        "description": "Un espacio de un sitio fuera del alcance responde igual que uno inexistente (404).",
+        "operationId": "getSpace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Modificar un espacio",
+        "description": "Cambia nombre, tipo y marca de espacio común; el sitio y el padre no cambian.",
+        "operationId": "updateSpace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSpaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Eliminar un espacio",
+        "description": "Solo sin espacios hijos ni puntos de acceso relacionados.",
+        "operationId": "deleteSpace",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operación correcta, sin contenido."
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/spaces/{id}/access-path": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Obtener el camino a un espacio",
+        "description": "Puntos de acceso que dan acceso al espacio o a sus ancestros, desde la raíz y, a igual profundidad, por nombre.",
+        "operationId": "getAccessPath",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessPathEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1430,6 +2400,152 @@
           "organizationId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "AccessPathEntryDto": {
+        "required": [
+          "id",
+          "siteId",
+          "name",
+          "type",
+          "toSpaceId",
+          "fromSpaceId",
+          "failMode",
+          "toSpaceDepth"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "toSpaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromSpaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "failMode": {
+            "type": "string"
+          },
+          "toSpaceDepth": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AccessPointDto": {
+        "required": [
+          "id",
+          "siteId",
+          "name",
+          "type",
+          "toSpaceId",
+          "fromSpaceId",
+          "failMode"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "toSpaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromSpaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "failMode": {
+            "type": "string"
+          }
+        }
+      },
+      "AccessPointRequest": {
+        "required": [
+          "name",
+          "type",
+          "toSpaceId",
+          "fromSpaceId",
+          "failMode"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "enum": [
+              "door",
+              "gate",
+              "barrier",
+              "turnstile",
+              "elevator"
+            ],
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "toSpaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "fromSpaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "failMode": {
+            "enum": [
+              "fail_safe",
+              "fail_secure"
+            ],
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1535,6 +2651,12 @@
             ]
           },
           "type": {
+            "enum": [
+              "building",
+              "gated_community",
+              "company",
+              "house"
+            ],
             "type": [
               "null",
               "string"
@@ -1554,6 +2676,54 @@
               {
                 "$ref": "#/components/schemas/JsonElement"
               }
+            ]
+          }
+        }
+      },
+      "CreateSpaceRequest": {
+        "required": [
+          "name",
+          "type",
+          "parentId",
+          "isCommon"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "enum": [
+              "site",
+              "building",
+              "floor",
+              "unit",
+              "common_area",
+              "parking",
+              "lot",
+              "zone"
+            ],
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "isCommon": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }
@@ -2065,6 +3235,48 @@
           }
         }
       },
+      "SpaceDto": {
+        "required": [
+          "id",
+          "siteId",
+          "parentId",
+          "type",
+          "name",
+          "isCommon",
+          "depth"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isCommon": {
+            "type": "boolean"
+          },
+          "depth": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "TokenResponse": {
         "required": [
           "accessToken",
@@ -2127,6 +3339,46 @@
               {
                 "$ref": "#/components/schemas/JsonElement"
               }
+            ]
+          }
+        }
+      },
+      "UpdateSpaceRequest": {
+        "required": [
+          "name",
+          "type",
+          "isCommon"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "enum": [
+              "site",
+              "building",
+              "floor",
+              "unit",
+              "common_area",
+              "parking",
+              "lot",
+              "zone"
+            ],
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isCommon": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }
