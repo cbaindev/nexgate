@@ -23,7 +23,9 @@ public sealed record IdentityResult<T>(T? Value, IdentityError? Error)
         new(default, new IdentityError(kind, field, message));
 }
 
-public sealed record TokenPair(string AccessToken, DateTimeOffset AccessTokenExpiresAt, string RefreshToken, Guid? OrganizationId);
+/// <summary>Tokens emitidos; <see cref="SessionExpiresAt"/> es cuándo vence la sesión de renovación.</summary>
+public sealed record TokenPair(string AccessToken, DateTimeOffset AccessTokenExpiresAt, string RefreshToken, Guid? OrganizationId,
+    DateTimeOffset SessionExpiresAt);
 
 public sealed record InvitationInput(string? Email, string? Role, string? ScopeType, Guid? SiteId, Guid? SpaceId = null);
 
@@ -58,7 +60,8 @@ public enum RemovalOutcome
 
 public sealed record OrganizationSummary(Guid Id, string Name);
 
-public sealed record CurrentUserInfo(Guid Id, string Email, Guid? ActiveOrganizationId, IReadOnlyList<OrganizationSummary> Organizations);
+public sealed record CurrentUserInfo(Guid Id, string Email, bool PlatformOperator, Guid? ActiveOrganizationId,
+    IReadOnlyList<OrganizationSummary> Organizations);
 
 public enum PlatformOperatorOutcome
 {

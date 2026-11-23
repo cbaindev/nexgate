@@ -1,0 +1,85 @@
+## MODIFIED Requirements
+
+### Requirement: Sign-in
+The system SHALL authenticate a user with email and password and SHALL issue a short-lived access token and a refresh token, without revealing whether an email has an account. When the client asks for it, the system SHALL deliver the refresh token only in an HTTP-only, secure, same-site strict cookie limited to the authentication path, and not in the response body.
+
+#### Scenario: Valid credentials with a single membership
+- **WHEN** a user with an active membership in exactly one organization signs in with valid credentials
+- **THEN** the system responds with HTTP 200, an access token whose active organization is that organization, its lifetime and a refresh token
+
+#### Scenario: Valid credentials with several memberships
+- **WHEN** a user with active memberships in several organizations signs in without choosing one
+- **THEN** the system issues tokens without an active organization, and organization-scoped operations made with that access token are rejected with HTTP 403 and the missing organization context error code
+
+#### Scenario: Choosing the organization at sign-in
+- **WHEN** a user signs in and names an organization where the user has an active membership
+- **THEN** the issued access token has that organization as the active one
+
+#### Scenario: Choosing an organization without membership
+- **WHEN** a user signs in and names an organization where the user has no active membership, or one that does not exist
+- **THEN** the system responds with HTTP 403 and the same problem details document in both cases, and issues no tokens
+
+#### Scenario: Invalid credentials
+- **WHEN** someone signs in with a wrong password, an email without an account or the credentials of a disabled account
+- **THEN** the system responds with HTTP 401 and the same problem details document with a stable error code in all three cases
+
+#### Scenario: Repeated failed attempts
+- **WHEN** sign-in attempts from the same client exceed the configured rate
+- **THEN** the system responds with HTTP 429 and does not evaluate the credentials until the limit window passes
+
+#### Scenario: Credentials never logged
+- **WHEN** a sign-in attempt is processed, successfully or not
+- **THEN** its logs and traces contain neither the password nor the email
+
+#### Scenario: Refresh token in a cookie
+- **WHEN** a client signs in with valid credentials and asks for the refresh token in a cookie
+- **THEN** the system responds with HTTP 200 and the access token, the response body carries no refresh token, and the response sets an HTTP-only, secure, same-site strict cookie limited to the authentication path that expires with the session
+
+### Requirement: Token refresh and organization switch
+The system SHALL let a client exchange a refresh token, sent in the request body or in the refresh cookie, for new tokens, optionally choosing another organization where the user has an active membership, and SHALL accept each refresh token only once. A refresh made with the cookie SHALL deliver the new refresh token in the cookie and not in the body.
+
+#### Scenario: Refresh
+- **WHEN** a client presents a valid refresh token
+- **THEN** the system responds with a new access token and a new refresh token, and the presented refresh token stops being valid
+
+#### Scenario: Switch organization
+- **WHEN** a client presents a valid refresh token and names another organization where the user has an active membership
+- **THEN** the new access token has that organization as the active one
+
+#### Scenario: Reuse of a rotated refresh token
+- **WHEN** a client presents a refresh token that was already exchanged
+- **THEN** the system responds with HTTP 401 and revokes every refresh token of that session
+
+#### Scenario: Refresh after the membership ends
+- **WHEN** a client refreshes tokens for an organization where the user no longer has an active membership
+- **THEN** the system issues no token with that organization as the active one
+
+#### Scenario: Refresh with the cookie
+- **WHEN** a client refreshes without a refresh token in the body and with a valid refresh cookie
+- **THEN** the system responds with HTTP 200 and a new access token, the body carries no refresh token, the cookie is replaced by the new refresh token, and the previous one stops being valid
+
+#### Scenario: Refresh without any token
+- **WHEN** a client refreshes without a refresh token in the body and without a refresh cookie
+- **THEN** the system responds with HTTP 401 and a problem details document with a stable error code
+
+### Requirement: Sign-out
+The system SHALL let a client end its session, presenting its refresh token in the body or in the refresh cookie, after which the session's refresh tokens are no longer accepted and the refresh cookie is removed.
+
+#### Scenario: Sign out
+- **WHEN** a client signs out presenting its refresh token
+- **THEN** the system responds with HTTP 204 and later refreshes with any token of that session fail with HTTP 401
+
+#### Scenario: Sign out with the cookie
+- **WHEN** a client signs out without a refresh token in the body and with a valid refresh cookie
+- **THEN** the system responds with HTTP 204, removes the refresh cookie, and a later refresh with that token fails with HTTP 401
+
+### Requirement: Current user
+The system SHALL let an authenticated user read its own identity, whether it is a platform operator, its active organization and the organizations where it has an active membership, and nothing about other users.
+
+#### Scenario: Read the current user
+- **WHEN** an authenticated user requests its own information
+- **THEN** the system responds with HTTP 200, the user identifier, its email, whether it is a platform operator, the active organization if any, and the identifier and name of each organization where it has an active membership
+
+#### Scenario: Organizations of other users
+- **WHEN** an authenticated user requests its own information
+- **THEN** the response does not include any organization where that user has no active membership

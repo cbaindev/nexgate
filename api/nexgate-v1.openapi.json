@@ -440,7 +440,7 @@
           "Auth"
         ],
         "summary": "Cerrar sesión",
-        "description": "Revoca la sesión del token de renovación. Responde igual aunque el token no exista o ya esté revocado.",
+        "description": "Revoca la sesión del token de renovación (del cuerpo o, sin él, de la cookie nexgate_refresh) y borra la cookie. Responde igual aunque el token no exista o ya esté revocado.",
         "operationId": "signOut",
         "requestBody": {
           "content": {
@@ -485,7 +485,7 @@
           "Auth"
         ],
         "summary": "Renovar los tokens o cambiar de organización activa",
-        "description": "Rota el token de renovación: el usado deja de valer y reutilizarlo revoca la sesión entera. Con organizationId cambia la organización activa.",
+        "description": "Rota el token de renovación: el usado deja de valer y reutilizarlo revoca la sesión entera. Con organizationId cambia la organización activa. Sin refreshToken en el cuerpo usa la cookie nexgate_refresh, la reemplaza por la nueva y responde refreshToken nulo.",
         "operationId": "refreshToken",
         "requestBody": {
           "content": {
@@ -557,7 +557,7 @@
           "Auth"
         ],
         "summary": "Iniciar sesión",
-        "description": "Valida correo y contraseña y emite el token de acceso y el de renovación. Con una sola membresía la organización queda elegida; con varias, se elige con organizationId. Credenciales inválidas, cuenta inexistente y cuenta deshabilitada responden igual (401 invalid_credentials).",
+        "description": "Valida correo y contraseña y emite el token de acceso y el de renovación. Con una sola membresía la organización queda elegida; con varias, se elige con organizationId. Con refreshTokenInCookie el token de renovación viaja solo en la cookie httpOnly nexgate_refresh y refreshToken es nulo. Credenciales inválidas, cuenta inexistente y cuenta deshabilitada responden igual (401 invalid_credentials).",
         "operationId": "signIn",
         "requestBody": {
           "content": {
@@ -6039,6 +6039,7 @@
         "required": [
           "id",
           "email",
+          "platformOperator",
           "activeOrganizationId",
           "organizations"
         ],
@@ -6050,6 +6051,9 @@
           },
           "email": {
             "type": "string"
+          },
+          "platformOperator": {
+            "type": "boolean"
           },
           "activeOrganizationId": {
             "type": [
@@ -7127,6 +7131,12 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "refreshTokenInCookie": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -7365,7 +7375,10 @@
             "format": "int32"
           },
           "refreshToken": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizationId": {
             "type": [

@@ -76,7 +76,7 @@ internal sealed class AuthenticationService(
         await sessions.CreateAsync(session, RefreshToken.Create(session.Id, login.UserId, hash, now), cancellationToken);
 
         var access = tokens.Issue(login.UserId, active, session.Id);
-        return IdentityResult<TokenPair>.Ok(new TokenPair(access.Value, access.ExpiresAt, refresh, active));
+        return IdentityResult<TokenPair>.Ok(new TokenPair(access.Value, access.ExpiresAt, refresh, active, session.ExpiresAt));
     }
 
     public async Task<IdentityResult<TokenPair>> RefreshAsync(string? refreshToken, Guid? organizationId, CancellationToken cancellationToken)
@@ -124,7 +124,7 @@ internal sealed class AuthenticationService(
         }
 
         var access = tokens.Issue(current.UserId, active, current.SessionId);
-        return IdentityResult<TokenPair>.Ok(new TokenPair(access.Value, access.ExpiresAt, refresh, active));
+        return IdentityResult<TokenPair>.Ok(new TokenPair(access.Value, access.ExpiresAt, refresh, active, current.SessionExpiresAt));
     }
 
     /// <summary>Revoca la sesión del token. No revela si el token existía.</summary>
@@ -342,7 +342,8 @@ internal sealed class MemberService(IMemberStore members, ScopeReferences scopes
 }
 
 /// <summary>Datos del usuario actual y sus organizaciones, para el selector (design, decisión 8).</summary>
-internal sealed class CurrentUserService(IAccountStore accounts, IOrganizationNames organizationNames) : ICurrentUserService
+internal sealed class CurrentUserService(IAccountStore accounts, IOrganizationNames organizationNames, IAccessQueries queries)
+    : ICurrentUserService
 {
     public async Task<CurrentUserInfo?> GetAsync(Guid userId, Guid? activeOrganizationId, CancellationToken cancellationToken)
     {
@@ -360,7 +361,7 @@ internal sealed class CurrentUserService(IAccountStore accounts, IOrganizationNa
             }
         }
 
-        return new CurrentUserInfo(account.Id, account.Email, activeOrganizationId,
+        return new CurrentUserInfo(account.Id, account.Email, await queries.IsPlatformOperatorAsync(userId, cancellationToken), activeOrganizationId,
             organizations.OrderBy(o => o.Name, StringComparer.OrdinalIgnoreCase).ToList());
     }
 }

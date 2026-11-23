@@ -21,7 +21,7 @@ The system SHALL keep one platform-wide user account per email address, compared
 - **THEN** the system treats it as the existing account and does not create a second one
 
 ### Requirement: Sign-in
-The system SHALL authenticate a user with email and password and SHALL issue a short-lived access token and a refresh token, without revealing whether an email has an account.
+The system SHALL authenticate a user with email and password and SHALL issue a short-lived access token and a refresh token, without revealing whether an email has an account. When the client asks for it, the system SHALL deliver the refresh token only in an HTTP-only, secure, same-site strict cookie limited to the authentication path, and not in the response body.
 
 #### Scenario: Valid credentials with a single membership
 - **WHEN** a user with an active membership in exactly one organization signs in with valid credentials
@@ -51,6 +51,10 @@ The system SHALL authenticate a user with email and password and SHALL issue a s
 - **WHEN** a sign-in attempt is processed, successfully or not
 - **THEN** its logs and traces contain neither the password nor the email
 
+#### Scenario: Refresh token in a cookie
+- **WHEN** a client signs in with valid credentials and asks for the refresh token in a cookie
+- **THEN** the system responds with HTTP 200 and the access token, the response body carries no refresh token, and the response sets an HTTP-only, secure, same-site strict cookie limited to the authentication path that expires with the session
+
 ### Requirement: Authenticated requests
 The system SHALL identify the caller of each request only from a valid access token issued by the system.
 
@@ -67,7 +71,7 @@ The system SHALL identify the caller of each request only from a valid access to
 - **THEN** the system refuses to start and reports the misconfiguration without exposing secrets
 
 ### Requirement: Token refresh and organization switch
-The system SHALL let a client exchange a refresh token for new tokens, optionally choosing another organization where the user has an active membership, and SHALL accept each refresh token only once.
+The system SHALL let a client exchange a refresh token, sent in the request body or in the refresh cookie, for new tokens, optionally choosing another organization where the user has an active membership, and SHALL accept each refresh token only once. A refresh made with the cookie SHALL deliver the new refresh token in the cookie and not in the body.
 
 #### Scenario: Refresh
 - **WHEN** a client presents a valid refresh token
@@ -85,19 +89,31 @@ The system SHALL let a client exchange a refresh token for new tokens, optionall
 - **WHEN** a client refreshes tokens for an organization where the user no longer has an active membership
 - **THEN** the system issues no token with that organization as the active one
 
+#### Scenario: Refresh with the cookie
+- **WHEN** a client refreshes without a refresh token in the body and with a valid refresh cookie
+- **THEN** the system responds with HTTP 200 and a new access token, the body carries no refresh token, the cookie is replaced by the new refresh token, and the previous one stops being valid
+
+#### Scenario: Refresh without any token
+- **WHEN** a client refreshes without a refresh token in the body and without a refresh cookie
+- **THEN** the system responds with HTTP 401 and a problem details document with a stable error code
+
 ### Requirement: Sign-out
-The system SHALL let a client end its session, after which the session's refresh tokens are no longer accepted.
+The system SHALL let a client end its session, presenting its refresh token in the body or in the refresh cookie, after which the session's refresh tokens are no longer accepted and the refresh cookie is removed.
 
 #### Scenario: Sign out
 - **WHEN** a client signs out presenting its refresh token
 - **THEN** the system responds with HTTP 204 and later refreshes with any token of that session fail with HTTP 401
 
+#### Scenario: Sign out with the cookie
+- **WHEN** a client signs out without a refresh token in the body and with a valid refresh cookie
+- **THEN** the system responds with HTTP 204, removes the refresh cookie, and a later refresh with that token fails with HTTP 401
+
 ### Requirement: Current user
-The system SHALL let an authenticated user read its own identity, its active organization and the organizations where it has an active membership, and nothing about other users.
+The system SHALL let an authenticated user read its own identity, whether it is a platform operator, its active organization and the organizations where it has an active membership, and nothing about other users.
 
 #### Scenario: Read the current user
 - **WHEN** an authenticated user requests its own information
-- **THEN** the system responds with HTTP 200, the user identifier, its email, the active organization if any, and the identifier and name of each organization where it has an active membership
+- **THEN** the system responds with HTTP 200, the user identifier, its email, whether it is a platform operator, the active organization if any, and the identifier and name of each organization where it has an active membership
 
 #### Scenario: Organizations of other users
 - **WHEN** an authenticated user requests its own information

@@ -4,7 +4,7 @@ Plataforma **multitenant** de **control de acceso físico**. Primer alcance: edi
 
 > "Nexgate" es el nombre de trabajo (coincide con la carpeta del proyecto).
 
-**Estado:** Fase 1, prototipo técnico. Implementados: base de la solución (`add-solution-foundation`), estructura en capas al estilo SMT con controllers (`adopt-smt-layout-and-controllers`), tenancy con aislamiento por organización (`add-tenancy-and-isolation`), identidad con roles por alcance (`add-identity-and-roles`) y contrato OpenAPI (`add-openapi-contract`), integrados en `integrate-modules-into-layers`.
+**Estado:** Fase 1, prototipo técnico. Implementados: base de la solución, estructura en capas al estilo SMT con controllers, tenancy con aislamiento por organización, identidad con roles por alcance (de organización, sitio o espacio), contrato OpenAPI, árbol de espacios y puntos de acceso, evaluador de acceso con política compilada, dispositivos con certificado de cliente y eventos de acceso (cambios 1 a 6 de `docs/08`), y la base de la SPA progresiva con la pantalla de sitios (`add-admin-panel-shell`).
 
 ## Idea en una frase
 
@@ -34,7 +34,7 @@ Alta y baja de credenciales desde un panel web, con puertas inteligentes (ESP32)
 
 ## Desarrollo local
 
-Requisitos: SDK de .NET 10 (ver `global.json`) y Docker.
+Requisitos: SDK de .NET 10 (ver `global.json`), Docker y, para la SPA, Node.js 22 o superior.
 
 ```bash
 # 1. Levantar PostgreSQL y Mosquitto
@@ -52,7 +52,14 @@ curl http://localhost:5095/health/ready     # la base de datos acepta conexiones
 
 # 5. Pruebas (usan PostgreSQL real)
 dotnet test
+
+# 6. SPA (http://localhost:5173, con proxy de /api hacia la API)
+npm --prefix src/01.Client/nexgate-web install
+npm --prefix src/01.Client/nexgate-web run dev
+npm --prefix src/01.Client/nexgate-web run check   # tipos, lint, pruebas, contrato, build y PWA
 ```
+
+La SPA se describe en [src/01.Client/nexgate-web/README.md](src/01.Client/nexgate-web/README.md).
 
 **Roles de base de datos.** `infra/postgres/init/01-roles.sh` crea dos roles al inicializar el volumen:
 `nexgate_owner` (migraciones, dueño de las tablas) y `nexgate_app` (la aplicación: sin propiedad y sin poder saltear RLS).
@@ -93,7 +100,8 @@ un endpoint protegido: ejecutar `signIn` (`POST /api/v1/auth/token`), copiar el 
 llamar la operación; responde igual que a cualquier cliente con ese token. El token no se guarda al recargar la página.
 
 El documento es el contrato del que el frontend genera su cliente (D-34) y está versionado en
-`api/nexgate-v1.openapi.json`. Si un cambio en la API lo modifica, `dotnet test` falla hasta regenerarlo:
+`api/nexgate-v1.openapi.json`. Si un cambio en la API lo modifica, `dotnet test` falla hasta regenerarlo (y después
+`npm run check` de la SPA falla hasta regenerar sus tipos con `npm run api:generate`):
 
 ```bash
 NEXGATE_UPDATE_OPENAPI=1 dotnet test src/07.Test/Nexgate.Test.Api --filter OpenApiContract
@@ -124,7 +132,7 @@ Estructura (capas numeradas al estilo SMT, D-32, con un proyecto por módulo den
 
 | Carpeta | Contenido |
 |---|---|
-| `src/01.Client` | Frontend (reservado) |
+| `src/01.Client` | `nexgate-web`: SPA progresiva en React + TypeScript (D-29), con el cliente generado del contrato |
 | `src/02.Api` | `Nexgate.Api.Rest` (API: controllers, modelos de solicitud, middlewares, autenticación, OpenAPI, comandos) y `Nexgate.Api.Workers` (procesos en segundo plano) |
 | `src/03.Service` | `Nexgate.Service.<Modulo>` (servicios) y `Nexgate.Service.<Modulo>.Contracts` (contrato público del módulo) |
 | `src/04.Data` | `Nexgate.Data.<Modulo>` (persistencia y migraciones del schema del módulo) |
@@ -132,7 +140,7 @@ Estructura (capas numeradas al estilo SMT, D-32, con un proyecto por módulo den
 | `src/06.Common` | `Nexgate.Common.BuildingBlocks` (contexto de seguridad, persistencia compartida, telemetría, salud) |
 | `src/07.Test` | Pruebas de la API y de arquitectura |
 
-Módulos: `Tenancy` (organizaciones y sitios) e `Identity` (cuentas, inicio de sesión, membresías, invitaciones y roles).
+Módulos: `Tenancy` (organizaciones y sitios), `Identity` (cuentas, inicio de sesión, membresías, invitaciones y roles), `Spaces` (árbol de espacios y puntos de acceso), `Occupancy` (por ahora, sujetos), `Access` (horarios, credenciales, otorgamientos y política compilada), `Devices` (dispositivos, reclamo y política por dispositivo) y `Events` (eventos de acceso).
 Además, `api/` tiene el contrato OpenAPI versionado e `infra/` la infraestructura local.
 
 ## Desarrollo con OpenSpec

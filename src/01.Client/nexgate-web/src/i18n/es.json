@@ -1,0 +1,98 @@
+{
+  "app": {
+    "name": "Nexgate",
+    "loading": "Cargando…",
+    "skipToContent": "Ir al contenido"
+  },
+  "signIn": {
+    "title": "Iniciar sesión",
+    "description": "Ingresá con tu correo y contraseña.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Ingresar",
+    "submitting": "Ingresando…",
+    "invalidCredentials": "El correo o la contraseña no son válidos.",
+    "expired": "Tu sesión terminó. Volvé a iniciar sesión.",
+    "required": "Completá el correo y la contraseña."
+  },
+  "organization": {
+    "chooseTitle": "Elegí una organización",
+    "chooseDescription": "Tenés acceso a varias organizaciones. ¿Con cuál querés trabajar?",
+    "switch": "Cambiar de organización",
+    "current": "Organización activa",
+    "none": "No tenés ninguna organización activa.",
+    "unavailable": "Ya no tenés acceso a esa organización. Elegí otra."
+  },
+  "user": {
+    "menu": "Menú de la cuenta",
+    "signOut": "Cerrar sesión",
+    "platformOperator": "Operador de plataforma"
+  },
+  "sections": {
+    "home": "Inicio",
+    "sites": "Sitios",
+    "spaces": "Espacios y puertas",
+    "access": "Accesos",
+    "devices": "Dispositivos",
+    "events": "Eventos",
+    "members": "Miembros",
+    "platform": "Plataforma",
+    "navigation": "Navegación principal"
+  },
+  "home": {
+    "welcome": "Hola, {{email}}",
+    "organization": "Estás trabajando en {{organization}}.",
+    "noOrganization": "Todavía no tenés una organización activa.",
+    "pick": "Elegí una sección para empezar."
+  },
+  "pages": {
+    "noPermissionTitle": "Sin permiso",
+    "noPermission": "No tenés permiso para ver esta sección.",
+    "comingSoonTitle": "Próximamente",
+    "comingSoon": "Esta sección llega en un próximo cambio.",
+    "notFoundTitle": "Página no encontrada",
+    "notFound": "No existe la página que buscás.",
+    "backHome": "Volver al inicio"
+  },
+  "offline": {
+    "title": "Sin conexión",
+    "description": "No hay conexión con el servidor. Revisá tu conexión e intentá de nuevo.",
+    "banner": "Estás sin conexión.",
+    "retry": "Reintentar"
+  },
+  "update": {
+    "available": "Hay una versión nueva de Nexgate.",
+    "reload": "Actualizar"
+  },
+  "errors": {
+    "forbidden": "No tenés permiso para esta operación.",
+    "notFound": "No encontramos lo que buscabas.",
+    "tooManyRequests": "Demasiados intentos. Probá de nuevo en un minuto.",
+    "network": "Sin conexión con el servidor.",
+    "unexpected": "Ocurrió un error inesperado.",
+    "correlation": "Código de referencia: {{id}}",
+    "validation": "Revisá los datos marcados."
+  },
+  "sites": {
+    "title": "Sitios",
+    "description": "Edificios, barrios, empresas y casas de la organización.",
+    "create": "Nuevo sitio",
+    "edit": "Editar",
+    "empty": "Todavía no hay sitios.",
+    "name": "Nombre",
+    "type": "Tipo",
+    "timeZone": "Zona horaria",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "createTitle": "Nuevo sitio",
+    "editTitle": "Editar sitio",
+    "nameRequired": "El nombre es obligatorio.",
+    "types": {
+      "building": "Edificio",
+      "gated_community": "Barrio cerrado",
+      "company": "Empresa",
+      "house": "Casa"
+    }
+  }
+}

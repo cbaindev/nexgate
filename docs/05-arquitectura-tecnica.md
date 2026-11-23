@@ -124,14 +124,22 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
 
 ## Frontend
 
-- **React + TypeScript**, Vite, TanStack Query, React Router.
+- **React + TypeScript**, Vite, TanStack Query, React Router, en `src/01.Client/nexgate-web` (`add-admin-panel-shell`). Componentes **shadcn/ui** sobre Radix con **Tailwind**.
+- **Cliente del contrato (D-34):**
+  - Tipos generados con openapi-typescript desde `api/nexgate-v1.openapi.json` y llamados con openapi-fetch.
+  - `npm run check` falla si los tipos no coinciden con el contrato, como `dotnet test` falla si el contrato no coincide con la API.
+- **Sesión en el navegador:**
+  - El token de acceso vive solo en memoria.
+  - El de renovación viaja en una cookie `HttpOnly`, `Secure`, `SameSite=Strict`, acotada a `/api/v1/auth` (`refreshTokenInCookie` al iniciar sesión).
+  - La SPA y la API se sirven en el mismo origen: en desarrollo, con el proxy de Vite.
+  - Las renovaciones van de a una, también entre pestañas, porque el servidor revoca la sesión si ve dos veces el mismo token.
 - Toda la aplicación web es una sola **SPA progresiva (PWA)**: se instala en el celular o la computadora, carga sin recargar páginas y consume solo la API REST (el backend no renderiza HTML). Navegación y pantallas por permiso:
   - **Administrador:** sitios, espacios, puertas, dispositivos, unidades, residentes, reglas, novedades, reportes.
   - **Guardia:** eventos en vivo, aperturas, visitas, accesos temporales.
   - **Residente o empleado:** mi unidad, mis invitados y libreta, mis accesos, historial.
 - Como PWA, funciona igual para todos los roles; para residentes prioriza lo rápido desde el celular (invitar en segundos, mostrar QR). App nativa más adelante si se necesita BLE.
-- i18n desde el inicio (interfaz en español).
-- Biblioteca de componentes a elegir (MUI o shadcn/ui con Tailwind).
+- i18n desde el inicio (interfaz en español, catálogo `src/i18n/es.json`).
+- PWA con vite-plugin-pwa: el service worker guarda solo los archivos del build, nunca respuestas de la API.
 
 ## Observabilidad y operación
 

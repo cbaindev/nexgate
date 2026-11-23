@@ -5,13 +5,17 @@ namespace Nexgate.Api.Rest.Models.Identity;
 
 // Los atributos de validación van sobre los parámetros del constructor: los controllers de ASP.NET Core los leen de ahí en los records.
 
-public sealed record SignInRequest(string? Email, string? Password, Guid? OrganizationId);
+/// <summary>Con <c>RefreshTokenInCookie</c>, el token de renovación viaja solo en la cookie httpOnly (aplicación web).</summary>
+public sealed record SignInRequest(string? Email, string? Password, Guid? OrganizationId, bool? RefreshTokenInCookie = null);
 
+/// <summary>Sin <c>RefreshToken</c> se usa la cookie de renovación.</summary>
 public sealed record RefreshRequest(string? RefreshToken, Guid? OrganizationId);
 
+/// <summary>Sin <c>RefreshToken</c> se usa la cookie de renovación.</summary>
 public sealed record SignOutRequest(string? RefreshToken);
 
-public sealed record TokenResponse(string AccessToken, string TokenType, int ExpiresIn, string RefreshToken, Guid? OrganizationId);
+/// <summary>Con la cookie de renovación, <c>RefreshToken</c> es nulo.</summary>
+public sealed record TokenResponse(string AccessToken, string TokenType, int ExpiresIn, string? RefreshToken, Guid? OrganizationId);
 
 public sealed record InviteRequest(
     [Required(ErrorMessage = "El correo es obligatorio")]
