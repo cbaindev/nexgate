@@ -104,3 +104,33 @@ public interface IAccessPolicyService
     Task<AccessResult<SimulationResultDto>> SimulateAsync(Guid accessPointId, string credentialType, string credentialValue,
         DateTimeOffset? at, CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// Clave HMAC de credenciales de un sitio (derivada de la clave maestra). La recibe el dispositivo del sitio al
+/// reclamarlo; nunca se registra en logs.
+/// </summary>
+public interface ISiteCredentialKeys
+{
+    byte[] GetSiteKey(Guid siteId);
+}
+
+/// <summary>Una credencial y su sujeto, sin el valor ni el hash.</summary>
+public sealed record CredentialReference(Guid CredentialId, Guid SubjectId);
+
+/// <summary>Busca la credencial del sitio de la organización activa a partir del hash que reporta un dispositivo.</summary>
+public interface ICredentialLookup
+{
+    /// <summary>Hash en base64url como en la política; null si no corresponde a ninguna credencial del sitio.</summary>
+    Task<CredentialReference?> FindByHashAsync(Guid siteId, string policyHash, CancellationToken cancellationToken);
+}
+
+/// <summary>Descuento de usos de los otorgamientos (design de add-device-sync-protocol, decisión 7).</summary>
+public interface IGrantUses
+{
+    /// <summary>
+    /// Descuenta un uso por una pasada permitida de la credencial en el punto, en el instante dado: nada si aplicaba un
+    /// otorgamiento sin límite; si no, uno del otorgamiento limitado que vence antes. Devuelve false solo si el punto o
+    /// la credencial no existen en la organización activa.
+    /// </summary>
+    Task<bool> ConsumeAsync(Guid siteId, Guid accessPointId, Guid credentialId, DateTimeOffset occurredAt, CancellationToken cancellationToken);
+}

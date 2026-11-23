@@ -33,4 +33,23 @@ public static class CredentialHash
     /// <summary>Representación del hash en la política compilada (base64url sin relleno).</summary>
     public static string ToPolicy(byte[] hash) =>
         Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    /// <summary>Inverso de <see cref="ToPolicy"/>; null si no es base64url válido.</summary>
+    public static byte[]? TryFromPolicy(string? value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length > 100)
+        {
+            return null;
+        }
+
+        var s = value.Replace('-', '+').Replace('_', '/');
+        try
+        {
+            return Convert.FromBase64String(s.PadRight(s.Length + (4 - s.Length % 4) % 4, '='));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
 }

@@ -1,0 +1,7 @@
+{
+  "description": "Paquete de un dispositivo sin puntos asignados, firmado",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEfwc1ljJegxjnUBrOl+BjQD8EZrBN\nrdGy5IHI68YDJsGdASYhukHUHoc8yyOM9y5dZsY+K/hQAAFqa9F88Qo3HQ==\n-----END PUBLIC KEY-----\n",
+  "package": "eyJmb3JtYXQiOjEsImRldmljZUlkIjoiMmQzZTRmNWEtNmI3Yy00ZDhlLTlmMGEtMWIyYzNkNGU1ZjYwIiwic2l0ZUlkIjoiMGI5YzNmNWUtNmQxYS00YzdlLTlhMmItM2Y0ZTVkNmM3YjhhIiwidmVyc2lvbiI6MSwiaXNzdWVkQXQiOiIyMDI2LTExLTIyVDEzOjAwOjAwKzAwOjAwIiwicG9pbnRzIjpbXX0=",
+  "signature": "He0cWeX8AJWWP86ZpTnCwbrm6h_LwbavcRCXE5dQcYV6BYX9SXKP1WlA1Eb3F4T1U_GQ8denwAFdnURzZK9qNw",
+  "valid": true
+}

@@ -7,6 +7,10 @@
   <Folder Name="/03.Service/">
     <Project Path="src/03.Service/Nexgate.Service.Access.Contracts/Nexgate.Service.Access.Contracts.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Access/Nexgate.Service.Access.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Devices.Contracts/Nexgate.Service.Devices.Contracts.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Devices/Nexgate.Service.Devices.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Events.Contracts/Nexgate.Service.Events.Contracts.csproj" />
+    <Project Path="src/03.Service/Nexgate.Service.Events/Nexgate.Service.Events.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Identity.Contracts/Nexgate.Service.Identity.Contracts.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Identity/Nexgate.Service.Identity.csproj" />
     <Project Path="src/03.Service/Nexgate.Service.Occupancy.Contracts/Nexgate.Service.Occupancy.Contracts.csproj" />
@@ -18,6 +22,8 @@
   </Folder>
   <Folder Name="/04.Data/">
     <Project Path="src/04.Data/Nexgate.Data.Access/Nexgate.Data.Access.csproj" />
+    <Project Path="src/04.Data/Nexgate.Data.Devices/Nexgate.Data.Devices.csproj" />
+    <Project Path="src/04.Data/Nexgate.Data.Events/Nexgate.Data.Events.csproj" />
     <Project Path="src/04.Data/Nexgate.Data.Identity/Nexgate.Data.Identity.csproj" />
     <Project Path="src/04.Data/Nexgate.Data.Occupancy/Nexgate.Data.Occupancy.csproj" />
     <Project Path="src/04.Data/Nexgate.Data.Spaces/Nexgate.Data.Spaces.csproj" />
@@ -25,6 +31,8 @@
   </Folder>
   <Folder Name="/05.Domain/">
     <Project Path="src/05.Domain/Nexgate.Domain.Access/Nexgate.Domain.Access.csproj" />
+    <Project Path="src/05.Domain/Nexgate.Domain.Devices/Nexgate.Domain.Devices.csproj" />
+    <Project Path="src/05.Domain/Nexgate.Domain.Events/Nexgate.Domain.Events.csproj" />
     <Project Path="src/05.Domain/Nexgate.Domain.Identity/Nexgate.Domain.Identity.csproj" />
     <Project Path="src/05.Domain/Nexgate.Domain.Occupancy/Nexgate.Domain.Occupancy.csproj" />
     <Project Path="src/05.Domain/Nexgate.Domain.Spaces/Nexgate.Domain.Spaces.csproj" />

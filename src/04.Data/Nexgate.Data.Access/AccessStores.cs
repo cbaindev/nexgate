@@ -38,6 +38,9 @@ public interface ICredentialStore
 
     Task<bool> SubjectHasAnyAsync(Guid subjectId, CancellationToken cancellationToken);
 
+    /// <summary>Credencial del sitio con ese HMAC (vencida o no).</summary>
+    Task<Credential?> FindByHashAsync(Guid siteId, byte[] valueHash, CancellationToken cancellationToken);
+
     void Add(Credential credential);
 
     void Remove(Credential credential);
@@ -60,6 +63,9 @@ public interface IGrantStore
     Task<bool> TargetInUseAsync(GrantTargetType type, Guid targetId, CancellationToken cancellationToken);
 
     Task<bool> SubjectHasAnyAsync(Guid subjectId, CancellationToken cancellationToken);
+
+    /// <summary>Descuenta un uso si le queda alguno; false si ya no le quedaban (nunca baja de cero).</summary>
+    Task<bool> ConsumeUseAsync(Guid grantId, CancellationToken cancellationToken);
 
     void Add(Grant grant);
 
@@ -136,6 +142,9 @@ internal sealed class CredentialStore(AccessDbContext db) : ICredentialStore
     public Task<bool> SubjectHasAnyAsync(Guid subjectId, CancellationToken cancellationToken) =>
         db.Credentials.AnyAsync(c => c.SubjectId == subjectId, cancellationToken);
 
+    public Task<Credential?> FindByHashAsync(Guid siteId, byte[] valueHash, CancellationToken cancellationToken) =>
+        db.Credentials.AsNoTracking().FirstOrDefaultAsync(c => c.SiteId == siteId && c.ValueHash == valueHash, cancellationToken);
+
     public void Add(Credential credential) => db.Credentials.Add(credential);
 
     public void Remove(Credential credential) => db.Credentials.Remove(credential);
@@ -191,6 +200,10 @@ internal sealed class GrantStore(AccessDbContext db) : IGrantStore
 
     public Task<bool> SubjectHasAnyAsync(Guid subjectId, CancellationToken cancellationToken) =>
         db.Grants.AnyAsync(g => g.SubjectId == subjectId, cancellationToken);
+
+    public async Task<bool> ConsumeUseAsync(Guid grantId, CancellationToken cancellationToken) =>
+        await db.Grants.Where(g => g.Id == grantId && g.RemainingUses > 0)
+            .ExecuteUpdateAsync(s => s.SetProperty(g => g.RemainingUses, g => g.RemainingUses - 1), cancellationToken) == 1;
 
     public void Add(Grant grant) => db.Grants.Add(grant);
 

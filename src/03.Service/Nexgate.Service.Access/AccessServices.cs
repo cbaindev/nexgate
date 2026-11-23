@@ -382,3 +382,81 @@ internal sealed class AccessPolicyService(
             .ToList();
     }
 }
+
+internal sealed class SiteCredentialKeys(CredentialKey key) : ISiteCredentialKeys
+{
+    public byte[] GetSiteKey(Guid siteId) => CredentialHash.SiteKey(key.Master, siteId);
+}
+
+internal sealed class CredentialLookup(ICredentialStore credentials) : ICredentialLookup
+{
+    public async Task<CredentialReference?> FindByHashAsync(Guid siteId, string policyHash, CancellationToken cancellationToken) =>
+        CredentialHash.TryFromPolicy(policyHash) is { Length: 32 } hash
+        && await credentials.FindByHashAsync(siteId, hash, cancellationToken) is { } credential
+            ? new CredentialReference(credential.Id, credential.SubjectId)
+            : null;
+}
+
+/// <summary>
+/// Descuento de usos por eventos de dispositivos (design de add-device-sync-protocol, decisión 7). Con varios dispositivos
+/// sin red, el límite es eventual: cada uno decidió con su política; acá solo se evita bajar de cero.
+/// </summary>
+internal sealed class GrantUses(
+    IGrantStore grants,
+    IScheduleStore schedules,
+    ICredentialStore credentials,
+    ISiteDirectory sites,
+    ISpaceDirectory spaces) : IGrantUses
+{
+    public async Task<bool> ConsumeAsync(Guid siteId, Guid accessPointId, Guid credentialId, DateTimeOffset occurredAt,
+        CancellationToken cancellationToken)
+    {
+        if (await credentials.FindAsync(credentialId, cancellationToken) is not { } credential || credential.SiteId != siteId
+            || await spaces.GetAccessPointAsync(accessPointId, cancellationToken) is not { } point || point.SiteId != siteId
+            || await sites.GetTimeZoneAsync(siteId, cancellationToken) is not { } timeZone)
+        {
+            return false;
+        }
+
+        var subtree = await spaces.GetSubtreeIdsAsync(point.ToSpaceId, cancellationToken) ?? [];
+        var candidates = (await grants.ListCoveringAsync(siteId, subtree, point.Id, cancellationToken))
+            .Where(g => g.SubjectId == credential.SubjectId && g.Effect == GrantEffect.Allow && Valid(g, occurredAt))
+            .ToList();
+        var scheduleIds = candidates.Where(g => g.ScheduleId is not null).Select(g => g.ScheduleId!.Value).Distinct().ToList();
+        var windows = scheduleIds.Count == 0
+            ? new Dictionary<Guid, IReadOnlyList<ScheduleWindow>>()
+            : (await schedules.FindManyAsync(scheduleIds, cancellationToken)).ToDictionary(s => s.Id, s => s.Windows);
+        var (day, minute) = LocalTime(timeZone, occurredAt);
+        var applicable = candidates
+            .Where(g => g.ScheduleId is not { } s
+                        || windows.GetValueOrDefault(s, []).Any(w => (w.Days & (1 << day)) != 0 && w.From <= minute && minute < w.To))
+            .ToList();
+
+        if (applicable.Any(g => g.RemainingUses is null))
+        {
+            return true;
+        }
+
+        foreach (var grant in applicable.Where(g => g.RemainingUses > 0)
+                     .OrderBy(g => g.ValidUntil ?? DateTimeOffset.MaxValue).ThenBy(g => g.CreatedAt).ThenBy(g => g.Id))
+        {
+            if (await grants.ConsumeUseAsync(grant.Id, cancellationToken))
+            {
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool Valid(Grant grant, DateTimeOffset at) =>
+        (grant.ValidFrom is not { } from || from <= at) && (grant.ValidUntil is not { } until || at < until);
+
+    /// <summary>Día (0 = lunes) y minuto locales del instante en la zona del sitio.</summary>
+    internal static (int Day, int Minute) LocalTime(string timeZone, DateTimeOffset at)
+    {
+        var local = Instant.FromDateTimeOffset(at).InZone(DateTimeZoneProviders.Tzdb[timeZone]);
+        return ((int)local.DayOfWeek - 1, local.Hour * 60 + local.Minute);
+    }
+}
+

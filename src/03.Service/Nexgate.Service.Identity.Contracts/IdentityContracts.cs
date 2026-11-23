@@ -23,6 +23,15 @@ public static class Permissions
 
     /// <summary>Crear, modificar y eliminar sujetos, horarios, credenciales y otorgamientos.</summary>
     public const string AccessManage = "access.manage";
+
+    /// <summary>Leer dispositivos, su estado y sus puntos de acceso.</summary>
+    public const string DevicesRead = "devices.read";
+
+    /// <summary>Registrar, modificar, asignar, revocar y eliminar dispositivos, y emitir códigos de reclamo.</summary>
+    public const string DevicesManage = "devices.manage";
+
+    /// <summary>Consultar los eventos de acceso.</summary>
+    public const string EventsRead = "events.read";
 }
 
 /// <summary>Valores públicos de los roles (D-05).</summary>

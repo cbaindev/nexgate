@@ -36,8 +36,8 @@ Este mismo algoritmo corre en dos lugares: en el backend (para simulaciones y au
 El backend no manda "reglas" a las puertas: manda una **política compilada** por dispositivo.
 
 - Un compilador toma los otorgamientos que no vencieron y calcula, para cada punto de acceso, la lista de credenciales que pueden abrir y en qué ventanas (`add-access-evaluator`). El dispositivo junta las políticas de sus puntos (`add-device-sync-protocol`).
-- Cada política tiene un hash de su contenido canónico; el número de **versión monotónico** lo agrega el cambio de dispositivos. El dispositivo informa qué versión tiene; si hay una más nueva, la descarga (completa o como delta).
-- Se recompila **solo lo afectado**: un evento interno (outbox) como "otorgamiento creado", "ocupación cerrada" o "estado financiero cambiado" dispara la recompilación de los dispositivos involucrados.
+- Cada política tiene un hash de su contenido canónico. El paquete del dispositivo tiene una **versión monotónica** que avanza solo cuando cambia el contenido, y va **firmado** (ECDSA P-256 sobre los bytes exactos, firma en `X-Nexgate-Signature`). El dispositivo informa su versión en el latido y descarga la nueva cuando la hay; con `If-None-Match` y la versión vigente, la respuesta es "sin cambios" (`vectors/device-policy/`).
+- Por ahora la política se compila al consultarla (latido o descarga). Más adelante se recompila **solo lo afectado**: un evento interno (outbox) como "otorgamiento creado", "ocupación cerrada" o "estado financiero cambiado" dispara la recompilación de los dispositivos involucrados.
 - Las credenciales se guardan como **HMAC con una clave por sitio**, derivada de una clave maestra del backend, nunca en claro. Los dispositivos del sitio reciben la clave del sitio al aprovisionarse y calculan el mismo HMAC sobre lo que leen. Se descartó la clave por dispositivo: obligaba a guardar el valor de las credenciales de forma reversible para recompilar.
 
 Formato v1 de la política de un punto de acceso (detalle en `vectors/access-evaluation/README.md`):
@@ -54,6 +54,8 @@ Formato v1 de la política de un punto de acceso (detalle en `vectors/access-eva
 ```
 
 `offsets` permite calcular la hora local sin base de zonas horarias; `windows` son horarios (máscara de días, bit 0 = lunes, y minutos locales `[from, to)`); `credentials` son todas las credenciales activas del sitio, así una credencial válida sin permiso en esa puerta se distingue de una desconocida; cada entrada une una credencial con un otorgamiento que cubre el punto, con la intersección de vigencias y los usos restantes.
+
+**Descuento de usos.** Al recibir un evento permitido de una credencial conocida, el backend descuenta un uso del otorgamiento limitado que vence antes, salvo que también aplique uno sin límite; un reenvío del mismo evento no descuenta de nuevo. Con varios dispositivos sin conexión, cada uno decide con su política: el límite es **eventual** (pueden pasar más veces que los usos disponibles) y nunca baja de cero. Es una decisión de diseño documentada.
 
 ## 3.1 Credenciales sin lista: QR firmado
 

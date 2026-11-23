@@ -30,7 +30,16 @@ Un controlador de puerta barato, que **decide solo** (offline), se **actualiza s
 
 ## Comunicación
 
-**Protocolo:** MQTT sobre TLS (Mosquitto o EMQX). El backend .NET se suscribe con MQTTnet. Alternativa más simple para el prototipo: HTTPS con WebSocket o long-polling.
+**Prototipo (implementado en `add-device-sync-protocol`): HTTPS con sondeo**, en un endpoint de Kestrel aparte que acepta certificados de cliente (`Kestrel:Endpoints:Devices`, puerto 7443 en desarrollo):
+
+| Operación | Ruta | Autenticación |
+|---|---|---|
+| Reclamo | `POST /api/v1/device/claim` | código de reclamo (con límite de intentos) |
+| Política | `GET /api/v1/device/policy` | certificado; `If-None-Match` con la versión, firma en `X-Nexgate-Signature` |
+| Latido | `POST /api/v1/device/heartbeat` | certificado; responde versión vigente, hora del servidor y cada cuántos segundos volver |
+| Eventos | `POST /api/v1/device/events` | certificado; lotes de hasta 100, idempotentes por id |
+
+**Destino: MQTT sobre TLS** (Mosquitto o EMQX) para avisos inmediatos y comandos. El backend .NET se suscribe con MQTTnet.
 
 Tópicos propuestos:
 
@@ -41,19 +50,20 @@ nexgate/{org}/{sitio}/{dispositivo}/cmd      comandos (abrir, sincronizar, reini
 nexgate/{org}/{sitio}/{dispositivo}/policy   aviso de nueva versión de política
 ```
 
-- **Política:** el aviso llega por MQTT y el dispositivo descarga el blob (firmado) por HTTPS. Evita mandar listas grandes por MQTT.
+- **Política:** con MQTT el aviso llegará por el tópico `policy`; la descarga del paquete firmado sigue siendo por HTTPS. Evita mandar listas grandes por MQTT.
 - **Eventos:** se envían con id único (idempotencia) y se encolan localmente si no hay red.
-- **Heartbeat:** cada pocos minutos, con versión de política, firmware y batería. El panel muestra **salud del dispositivo** y genera una Novedad si deja de reportar.
+- **Heartbeat:** cada `pollSeconds` (60 por defecto), con versión de política y firmware (la batería llega con salud). El panel muestra el último contacto; la **salud del dispositivo** y la Novedad por falta de reporte llegan con `add-device-ota-and-health`.
 
 ## Seguridad
 
-- **Identidad por dispositivo:** certificado o token propio, nunca compartido. Se revoca individualmente.
+- **Identidad por dispositivo (D-35):** certificado de cliente emitido por la autoridad de dispositivos de Nexgate al reclamarlo. El dispositivo genera su clave P-256 y manda una solicitud de certificado; la clave privada nunca sale de él. Se revoca individualmente (o se invalida al emitir un código nuevo) y el backend lo rechaza en la solicitud siguiente.
 - **Arranque seguro y flash cifrada** (secure boot v2 y flash encryption del ESP32).
 - **OTA firmado**, con verificación de firma, versión mínima y **rollback automático** si el firmware nuevo no se reporta sano.
-- **Credenciales hasheadas** en el dispositivo (HMAC con clave del dispositivo).
+- **Credenciales hasheadas** en el dispositivo (HMAC con la clave del sitio, que recibe al reclamarlo; `docs/03`).
+- **Política firmada** (ECDSA P-256): el dispositivo verifica la firma antes de reemplazar la política vigente y la vuelve a verificar al reiniciar (`vectors/device-policy/`).
 - **Comandos firmados** y con vencimiento, para que un mensaje viejo no se reutilice.
 - **Detección de tamper** (apertura de caja) con evento inmediato.
-- **Provisioning:** el instalador reclama el dispositivo con un código (QR en la caja) por BLE o portal cautivo, y lo asocia a un punto de acceso desde el panel.
+- **Provisioning:** el administrador da de alta el dispositivo en el panel y obtiene un código de reclamo (un solo uso, vence a los 7 días). El instalador lo carga en el dispositivo (por BLE o portal cautivo), que lo canjea por su certificado. Los puntos que controla se asignan desde el panel.
 
 ## Seguridad física y de egreso
 

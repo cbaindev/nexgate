@@ -63,6 +63,15 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
     /// <summary>Clave maestra de credenciales (<c>Access:CredentialKey</c>); null para no configurarla.</summary>
     public string? CredentialKey { get; init; } = TestCredentialKey;
 
+    /// <summary>Autoridad de dispositivos (<c>Devices:CertificateAuthority</c>); null para no configurarla.</summary>
+    public DeviceKeys.Authority? DeviceAuthority { get; init; } = DeviceKeys.TestAuthority;
+
+    /// <summary>Clave de firma de políticas (<c>Devices:PolicySigningKey</c>); null para no configurarla.</summary>
+    public string? PolicySigningKey { get; init; } = DeviceKeys.TestPolicySigningKey;
+
+    /// <summary>Reclamos de dispositivos por minuto. Alto por defecto para que las pruebas no lo choquen.</summary>
+    public int ClaimPermits { get; init; } = 100_000;
+
     public static string NewEmail(string prefix = "usuario") => $"{prefix}-{Guid.NewGuid():N}@nexgate.test";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -82,10 +91,24 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
             builder.UseSetting("Access:CredentialKey", CredentialKey);
         }
 
+        if (DeviceAuthority is not null)
+        {
+            builder.UseSetting("Devices:CertificateAuthority:Certificate", DeviceAuthority.CertificatePem);
+            builder.UseSetting("Devices:CertificateAuthority:Key", DeviceAuthority.KeyPem);
+        }
+
+        if (PolicySigningKey is not null)
+        {
+            builder.UseSetting("Devices:PolicySigningKey", PolicySigningKey);
+        }
+
+        builder.UseSetting("Devices:ClaimPermitsPerMinute", ClaimPermits.ToString());
+
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<ILoggerProvider>(Logs);
             services.AddSingleton<IStartupFilter, TestEndpoints>();
+            services.AddSingleton<IStartupFilter, TestClientCertificate>();
             services.AddSingleton<IStartupFilter>(Responses);
 
             if (Organization is { } id)
@@ -94,6 +117,14 @@ public sealed class NexgateFactory(TestDatabase? database = null) : WebApplicati
                 services.AddSingleton<ICurrentOrganization>(new FixedOrganization(id));
             }
         });
+    }
+
+    /// <summary>Cliente que presenta el certificado como si viniera de la conexión TLS (ver <see cref="TestClientCertificate"/>).</summary>
+    public HttpClient CreateDeviceClient(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add(TestClientCertificate.Header, Convert.ToBase64String(certificate.RawData));
+        return client;
     }
 
     public HttpClient CreateClientWithToken(string accessToken)

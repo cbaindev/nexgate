@@ -873,6 +873,767 @@
         ]
       }
     },
+    "/api/v1/device/claim": {
+      "post": {
+        "tags": [
+          "DeviceProtocol"
+        ],
+        "summary": "Reclamar un dispositivo",
+        "description": "Con el código de reclamo y una solicitud de certificado PKCS#10 (PEM, clave P-256). Devuelve el certificado de cliente, el de la autoridad, la clave HMAC del sitio (base64) y la clave pública que verifica las políticas. Un código inexistente, usado o vencido responde 400 invalid_claim.",
+        "operationId": "claimDevice",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceClaim"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados intentos; reintentar más tarde (too_many_requests).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/device/events": {
+      "post": {
+        "tags": [
+          "DeviceProtocol"
+        ],
+        "summary": "Enviar eventos de acceso",
+        "description": "Lote de 1 a 100 eventos con el identificador que generó el dispositivo (un reenvío no duplica), el instante en que ocurrieron (también los encolados sin conexión), el punto, el hash de la credencial si la leyó, la decisión, el motivo y la versión de política. Se valida el lote entero antes de guardar.",
+        "operationId": "sendDeviceEvents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceEventsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DeviceCertificate": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/device/heartbeat": {
+      "post": {
+        "tags": [
+          "DeviceProtocol"
+        ],
+        "summary": "Latido del dispositivo",
+        "description": "Registra el último contacto y las versiones de firmware y de política. Responde la versión de política vigente, la hora del servidor (UTC) y cada cuántos segundos volver a latir.",
+        "operationId": "deviceHeartbeat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartbeatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeartbeatResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DeviceCertificate": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/device/policy": {
+      "get": {
+        "tags": [
+          "DeviceProtocol"
+        ],
+        "summary": "Descargar la política del dispositivo",
+        "description": "Paquete con la política v1 de cada punto que controla el dispositivo y una versión que solo avanza cuando cambia el contenido (encabezado ETag). Con If-None-Match y la versión vigente responde 304. La firma ECDSA P-256 (IEEE P1363, base64url) de los bytes exactos del cuerpo viaja en X-Nexgate-Signature.",
+        "operationId": "getDevicePolicy",
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicePolicyResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Sin cambios: el cliente ya tiene la versión vigente."
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DeviceCertificate": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{id}": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Obtener un dispositivo",
+        "operationId": "getDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Cambiar el nombre de un dispositivo",
+        "operationId": "updateDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Eliminar un dispositivo",
+        "description": "Su certificado deja de valer y sus puntos quedan libres. Sus eventos se conservan.",
+        "operationId": "deleteDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operación correcta, sin contenido."
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{id}/access-points": {
+      "put": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Asignar los puntos de acceso que controla un dispositivo",
+        "description": "Reemplaza el conjunto: puntos del sitio del dispositivo que no controle otro dispositivo (409 access_point_assigned).",
+        "operationId": "assignDeviceAccessPoints",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignAccessPointsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{id}/claim-code": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Emitir un nuevo código de reclamo",
+        "description": "El dispositivo vuelve a pendiente y su certificado anterior deja de valer. El código solo aparece en esta respuesta.",
+        "operationId": "issueDeviceClaimCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedDevice"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{id}/revocation": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Revocar un dispositivo",
+        "description": "Su certificado deja de valer en la solicitud siguiente. Conserva sus puntos y se puede volver a reclamar con un código nuevo.",
+        "operationId": "revokeDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/grants/{id}": {
       "get": {
         "tags": [
@@ -2467,6 +3228,141 @@
         ]
       }
     },
+    "/api/v1/sites/{siteId}/access-events": {
+      "get": {
+        "tags": [
+          "AccessEvents"
+        ],
+        "summary": "Listar los eventos de acceso de un sitio",
+        "description": "Del más reciente al más antiguo por el instante en que ocurrieron, con filtros opcionales por punto, sujeto y rango [from, to). Páginas de hasta 100 (50 por defecto); nextCursor pide la siguiente.",
+        "operationId": "listAccessEvents",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accessPointId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "subjectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessEventPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/sites/{siteId}/access-points": {
       "get": {
         "tags": [
@@ -2777,6 +3673,193 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CredentialDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida: el detalle de cada campo viene en errors.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual; el código indica cuál.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/sites/{siteId}/devices": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Listar los dispositivos de un sitio",
+        "description": "Ordenados por nombre, con su estado, sus puntos de acceso, el último contacto y las versiones.",
+        "operationId": "listDevices",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación correcta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El recurso no existe o no es visible para el usuario.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error inesperado; el identificador de correlación sirve para buscarlo en los logs.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Registrar un dispositivo",
+        "description": "Queda pendiente con un código de reclamo de un solo uso que vence a los 7 días. El código solo aparece en esta respuesta.",
+        "operationId": "createDevice",
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recurso creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedDevice"
                 }
               }
             }
@@ -4220,6 +5303,96 @@
           }
         }
       },
+      "AccessEventDto": {
+        "required": [
+          "id",
+          "siteId",
+          "deviceId",
+          "accessPointId",
+          "occurredAt",
+          "receivedAt",
+          "decision",
+          "reason",
+          "credentialId",
+          "subjectId",
+          "policyVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accessPointId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "credentialId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "subjectId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "policyVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "AccessEventPage": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessEventDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AccessPathEntryDto": {
         "required": [
           "id",
@@ -4382,6 +5555,24 @@
           }
         }
       },
+      "AssignAccessPointsRequest": {
+        "required": [
+          "accessPointIds"
+        ],
+        "type": "object",
+        "properties": {
+          "accessPointIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "AssignRoleRequest": {
         "required": [
           "role",
@@ -4432,6 +5623,31 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "ClaimRequest": {
+        "required": [
+          "claimCode",
+          "certificateRequest"
+        ],
+        "type": "object",
+        "properties": {
+          "claimCode": {
+            "maxLength": 40,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "certificateRequest": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4850,6 +6066,256 @@
           }
         }
       },
+      "DeviceClaim": {
+        "required": [
+          "deviceId",
+          "siteId",
+          "certificate",
+          "authorityCertificate",
+          "credentialKey",
+          "policyKey",
+          "pollSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "certificate": {
+            "type": "string"
+          },
+          "authorityCertificate": {
+            "type": "string"
+          },
+          "credentialKey": {
+            "type": "string"
+          },
+          "policyKey": {
+            "type": "string"
+          },
+          "pollSeconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeviceDto": {
+        "required": [
+          "id",
+          "siteId",
+          "name",
+          "status",
+          "accessPointIds",
+          "lastSeenAt",
+          "firmwareVersion",
+          "reportedPolicyVersion",
+          "policyVersion",
+          "certificateExpiresAt",
+          "claimExpiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "accessPointIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "lastSeenAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "firmwareVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reportedPolicyVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "policyVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "certificateExpiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "claimExpiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceEventRequest": {
+        "required": [
+          "id",
+          "occurredAt",
+          "accessPointId",
+          "credential",
+          "decision",
+          "reason",
+          "policyVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "accessPointId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "credential": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "decision": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "policyVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DeviceEventsRequest": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DeviceEventRequest"
+            }
+          }
+        }
+      },
+      "DevicePolicyResponse": {
+        "required": [
+          "format",
+          "deviceId",
+          "siteId",
+          "version",
+          "issuedAt",
+          "points"
+        ],
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompiledPolicy"
+            }
+          }
+        }
+      },
+      "DeviceRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "GrantDto": {
         "required": [
           "id",
@@ -4921,6 +6387,52 @@
           }
         }
       },
+      "HeartbeatRequest": {
+        "required": [
+          "firmwareVersion",
+          "policyVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "firmwareVersion": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "policyVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "HeartbeatResult": {
+        "required": [
+          "policyVersion",
+          "serverTime",
+          "pollSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "policyVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pollSeconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "required": [
           "title",
@@ -4980,6 +6492,23 @@
           }
         }
       },
+      "IngestResult": {
+        "required": [
+          "accepted",
+          "duplicates"
+        ],
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicates": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "InviteRequest": {
         "required": [
           "email",
@@ -5023,6 +6552,26 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "IssuedDevice": {
+        "required": [
+          "device",
+          "claimCode",
+          "claimExpiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "device": {
+            "$ref": "#/components/schemas/DeviceDto"
+          },
+          "claimCode": {
+            "type": "string"
+          },
+          "claimExpiresAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -5931,6 +7480,10 @@
         "description": "Token de acceso de POST /api/v1/auth/token.",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "DeviceCertificate": {
+        "type": "mutualTLS",
+        "description": "Certificado de cliente del dispositivo, emitido por la autoridad de dispositivos de Nexgate al reclamarlo (POST /api/v1/device/claim), en el endpoint HTTPS de dispositivos."
       }
     }
   },

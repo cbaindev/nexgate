@@ -48,6 +48,9 @@ public static class AccessServiceCollectionExtensions
         services.AddScoped<ICredentialService, CredentialService>();
         services.AddScoped<IGrantService, GrantService>();
         services.AddScoped<IAccessPolicyService, AccessPolicyService>();
+        services.AddSingleton<ISiteCredentialKeys, SiteCredentialKeys>();
+        services.AddScoped<ICredentialLookup, CredentialLookup>();
+        services.AddScoped<IGrantUses, GrantUses>();
         services.AddScoped<ISpaceUsage, GrantSpaceUsage>();
         services.AddScoped<IAccessPointUsage, GrantAccessPointUsage>();
         services.AddScoped<ISubjectUsage, AccessSubjectUsage>();

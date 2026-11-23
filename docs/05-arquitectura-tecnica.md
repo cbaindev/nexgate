@@ -38,8 +38,8 @@ Una sola aplicación .NET con módulos claros. Cada módulo es dueño de su **sc
 | Spaces | Árbol de espacios y puntos de acceso |
 | Occupancy | Sujetos, unidades, ocupaciones, membresías, plantillas, contactos |
 | Access | Horarios, perfiles, credenciales, otorgamientos, invitaciones, evaluador y compilador |
-| Devices | Dispositivos, comandos, políticas publicadas, firmware |
-| Events | Eventos, presencia, novedades |
+| Devices | Dispositivos, reclamo con certificado, puntos que controlan, política firmada por dispositivo, comandos y firmware (después) |
+| Events | Eventos de acceso (ingesta y consulta), presencia y novedades (después) |
 | Notifications | Mail, WhatsApp, SMS, push |
 | Admin / Billing | Cuotas, uso, facturación (después) |
 
@@ -54,7 +54,7 @@ src/02.Api/Nexgate.Api.Rest/Controllers/Access/    controllers del módulo
 src/02.Api/Nexgate.Api.Rest/Models/Access/         modelos de solicitud HTTP con su validación
 ```
 
-Tenancy, Identity, Spaces, Occupancy (por ahora solo sujetos) y Access ya siguen esta estructura (`integrate-modules-into-layers`, `add-spaces-and-access-points`, `add-access-evaluator`). Access depende de los contratos de Tenancy, Spaces y Occupancy; ningún módulo anterior depende de Access, que implementa los puertos de uso de espacios, puntos de acceso y sujetos.
+Tenancy, Identity, Spaces, Occupancy (por ahora solo sujetos), Access, Devices y Events ya siguen esta estructura (`integrate-modules-into-layers`, `add-spaces-and-access-points`, `add-access-evaluator`, `add-device-sync-protocol`). Access depende de los contratos de Tenancy, Spaces y Occupancy, e implementa los puertos de uso de espacios, puntos de acceso y sujetos. Devices depende de los contratos de Access (compilar, clave del sitio), Spaces y Tenancy, e implementa el puerto de uso de puntos de acceso. Events depende de los contratos de Access (credencial por hash, descuento de usos), Spaces y Tenancy. Ningún módulo anterior depende de Devices ni de Events.
 
 Sentido de dependencias: `Api → Service → Data → Domain`, con `Common` disponible para `Service`, `Data` y los procesos. Cualquier capa de un módulo puede usar el `Contracts` de su propio módulo (por ejemplo, `Domain.Identity` usa los nombres de roles y permisos); `Contracts` no referencia nada. Entre módulos, solo `Service.<M> → Service.<Otro>.Contracts`: `Domain` y `Data` no ven a otros módulos. La persistencia de un módulo solo la usa su capa de servicio. Cuando un store necesita verificar algo de otro módulo dentro de su transacción, define un puerto propio que implementa su servicio con los contratos del otro módulo (por ejemplo, `IOrganizationReferences` en `Data.Identity`). Al revés, cuando un módulo necesita saber si otros usan uno de sus datos, define el puerto en su `Contracts` y los demás lo implementan (por ejemplo, `ISpaceUsage` de Spaces, que implementa Identity para no eliminar un espacio usado como alcance de un rol). Ningún proyecto de módulo usa el framework web. La API referencia las capas internas únicamente para componerlas (`Extensions/ModuleExtensions.cs`, la autenticación y el límite de intentos); sus controllers solo usan los contratos y sus propios modelos de solicitud (D-33).
 
@@ -101,7 +101,7 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
 - Autorización por **permisos granulares** evaluados en el servidor en cada solicitud a partir de las asignaciones de rol vigentes de la organización activa (`identity.role_assignment`: rol, alcance de organización, sitio o espacio, vigencia). Quitar un rol o una membresía tiene efecto en la solicitud siguiente aunque el token siga vigente. La interfaz solo refleja lo que devuelve `GET /api/v1/me/permissions`.
 - Estos permisos son administrativos, sobre la API. El acceso físico es exclusivo del motor de Otorgamientos.
 - El operador de plataforma (alta de organizaciones) se marca en la cuenta y se lee de la base en cada solicitud. El primero se crea con `dotnet run --project src/02.Api/Nexgate.Api.Rest -- create-platform-operator --email <correo>`.
-- Los dispositivos usan una autenticación aparte (certificado o token por dispositivo).
+- Los dispositivos usan una autenticación aparte (D-35): **certificado de cliente** emitido por la autoridad de dispositivos de Nexgate (`Devices:CertificateAuthority`) y validado por el esquema `DeviceCertificate` contra esa única raíz y contra la huella vigente del dispositivo. Kestrel suma un endpoint HTTPS para dispositivos que pide certificado (`Kestrel:Endpoints:Devices`); el endpoint principal no lo pide. Las acciones de dispositivo declaran `[RequireDevice]` (401 `device_authentication_required`), la organización activa sale del certificado y el contrato las marca con el esquema `mutualTLS`. Un token de usuario no sirve en ellas ni un certificado en las del panel. Fuera de `Development` la autoridad y la clave de firma de políticas (`Devices:PolicySigningKey`) son obligatorias.
 
 ## API y tiempo real
 

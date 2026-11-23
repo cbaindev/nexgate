@@ -142,7 +142,7 @@ public class OpenApiContractTests
                     Assert.True(schema is "#/components/schemas/ProblemDetails" or "#/components/schemas/HttpValidationProblemDetails",
                         $"{name} {status} no usa el formato estándar de errores.");
                 }
-                else if (status != "204")
+                else if (status is not ("204" or "304"))
                 {
                     Assert.True(response!["content"]?["application/json"]?["schema"] is not null, $"{name} {status} no declara esquema.");
                 }

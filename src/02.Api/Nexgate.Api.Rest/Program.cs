@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddNexgateTelemetry("nexgate-host", tracing => tracing.AddAspNetCoreInstrumentation());
 builder.Services.AddNexgateWebDefaults();
+builder.AddDeviceEndpoint();
 
 // La cadena de conexión se lee al resolver el servicio (no al arrancar), para que la configuración
 // definida por el entorno o por las pruebas siempre se respete.

@@ -18,6 +18,9 @@ public abstract class AccessRequirementAttribute : Attribute, IAsyncAuthorizatio
     /// <summary>El token es obligatorio (si es falso y <see cref="AcceptsToken"/> es verdadero, es opcional).</summary>
     public virtual bool RequiresToken => true;
 
+    /// <summary>La operación exige el certificado de cliente de un dispositivo (esquema <c>mutualTLS</c> del contrato).</summary>
+    public virtual bool AcceptsDeviceCertificate => false;
+
     /// <summary>Respuestas de error que puede producir el requisito.</summary>
     public abstract IReadOnlyList<int> ProblemStatusCodes { get; }
 

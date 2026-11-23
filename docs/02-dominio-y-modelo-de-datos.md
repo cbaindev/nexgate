@@ -104,7 +104,7 @@ Schema `spaces`.
 | Tabla | Campos principales |
 |---|---|
 | `space` | id, organization_id, site_id, parent_id (nulo solo en la raíz), path (`ltree`), type (site, building, floor, unit, common_area, parking, lot, zone), name (único entre hermanos sin distinguir mayúsculas), is_common, created_at, updated_at. Llegan con sus cambios: modo de presencia (ninguno, suave, duro), aforo máximo, cupo de invitados por unidad (reservado) y restricción por morosidad. |
-| `access_point` | id, organization_id, site_id, name (único en el sitio sin distinguir mayúsculas), type (door, gate, barrier, turnstile, elevator), to_space_id, from_space_id (opcional), fail_mode (fail_safe, fail_secure), created_at, updated_at. El dispositivo y su canal llegan con `add-device-sync-protocol`. |
+| `access_point` | id, organization_id, site_id, name (único en el sitio sin distinguir mayúsculas), type (door, gate, barrier, turnstile, elevator), to_space_id, from_space_id (opcional), fail_mode (fail_safe, fail_secure), created_at, updated_at. El dispositivo que lo controla vive en Devices (`device_access_point`). |
 
 Las dos tablas tienen la política RLS estándar por `organization_id`. Las claves foráneas compuestas con `site_id` garantizan en la base que el padre, el destino y el origen son del mismo sitio, y con `ON DELETE RESTRICT` impiden eliminar un espacio con hijos o puntos relacionados. Ver `openspec/specs/space-tree` y `openspec/specs/access-points`.
 
@@ -134,19 +134,24 @@ Schema `access`. Todas las tablas tienen la política RLS estándar por `organiz
 | `grant` (implementado) | id, organization_id, site_id, subject_id, target_type (space, access_point), target_id, schedule_id, valid_from, valid_until, effect (allow, deny), origin_type (por ahora solo manual), origin_id, remaining_uses, created_by, created_at |
 | `invitacion` | id, ocupacion_id, creado_por_sujeto_id, sujeto_id, tipo (nominal, recurrente, temporal, guardia), destino_espacio_id, horario_id, desde, hasta, usos_max, estado, otorgamiento_id |
 
-### Devices
+### Devices (dispositivos, puntos y versión de política implementados)
+
+Schema `devices`. Todas las tablas tienen la política RLS estándar por `organization_id`. El reclamo y la autenticación usan funciones `SECURITY DEFINER` acotadas (`find_claim`, `claim_device`, `authenticate_device`) porque todavía no hay organización activa. Ver `openspec/specs/device-provisioning` y `policy-sync`.
 
 | Tabla | Campos principales |
 |---|---|
-| `dispositivo` | id, sitio_id, tipo, modelo, firmware_version, estado, ultimo_contacto, version_politica, bateria, certificado_id |
-| `comando` | id, dispositivo_id, tipo (abrir, sincronizar, reiniciar, ota), payload, estado, creado_en |
-| `politica_compilada` | dispositivo_id, version, hash, blob_url, creado_en |
+| `device` (implementado) | id, organization_id, site_id, name (único por sitio sin distinguir mayúsculas), status (pending, active, revoked), claim_code_hash (SHA-256 del código de reclamo), claim_expires_at, certificate_thumbprint (SHA-256 del certificado vigente), certificate_expires_at, firmware_version, reported_policy_version, last_seen_at, created_by, created_at, updated_at. Batería y salud llegan con `add-device-ota-and-health` |
+| `device_access_point` (implementado) | organization_id, device_id, access_point_id (único: un punto lo controla un solo dispositivo) |
+| `device_policy` (implementado) | device_id, organization_id, version (monotónica), content_hash (de las políticas de los puntos), issued_at |
+| `comando` | id, dispositivo_id, tipo (abrir, sincronizar, reiniciar, ota), payload, estado, creado_en. Llega con MQTT |
 
-### Events
+### Events (eventos de acceso implementados)
+
+Schema `events`. Ver `openspec/specs/event-ingestion`.
 
 | Tabla | Campos principales |
 |---|---|
-| `evento` | id, sitio_id, ts, tipo, punto_acceso_id, sujeto_id, credencial_id, resultado, motivo. Particionada por mes. |
+| `access_event` (implementado) | id, organization_id, site_id, device_id, device_event_id (único por dispositivo: idempotencia), access_point_id, occurred_at (instante del dispositivo), received_at, decision, reason, credential_id, subject_id, policy_version, uses_settled. Sin el hash de la credencial. Se particionará por mes con `add-privacy-and-retention` |
 | `presencia` | sujeto_id, espacio_id, desde, expira_en, evento_id |
 | `novedad` | id, sitio_id, tipo (invitado_vencido_sin_salir, puerta_forzada, dispositivo_offline, ...), estado (abierta, revisada, cerrada), referencias, creado_en, revisado_por |
 

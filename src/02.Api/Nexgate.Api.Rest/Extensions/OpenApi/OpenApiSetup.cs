@@ -15,8 +15,10 @@ public static class OpenApiSetup
     public const string DocumentPath = "/openapi/v1.json";
     public const string SwaggerUiPrefix = "swagger";
     public const string BearerScheme = "Bearer";
+    public const string DeviceCertificateScheme = "DeviceCertificate";
 
     private const string AccessTokenKey = "nexgate:access-token";
+    private const string DeviceCertificateKey = "nexgate:device-certificate";
 
     /// <summary>Etiquetas del documento, con su descripción en español. Cada endpoint usa una.</summary>
     public static readonly IReadOnlyDictionary<string, string> Tags = new Dictionary<string, string>
@@ -36,6 +38,7 @@ public static class OpenApiSetup
         ["201"] = "Recurso creado.",
         ["204"] = "Operación correcta, sin contenido.",
         ["400"] = "Solicitud inválida: el detalle de cada campo viene en errors.",
+        ["304"] = "Sin cambios: el cliente ya tiene la versión vigente.",
         ["401"] = "Falta el token de acceso, es inválido o venció (authentication_required), o las credenciales no son válidas.",
         ["403"] = "Sin organización activa (organization_context_required) o sin permiso para la operación (permission_denied).",
         ["404"] = "El recurso no existe o no es visible para el usuario.",
@@ -151,6 +154,13 @@ public static class OpenApiSetup
             operation.Metadata[AccessTokenKey] = access.RequiresToken;
         }
 
+        if (context.Description.ActionDescriptor.EndpointMetadata.OfType<AccessRequirementAttribute>().LastOrDefault() is
+            { AcceptsDeviceCertificate: true })
+        {
+            operation.Metadata ??= new Dictionary<string, object>();
+            operation.Metadata[DeviceCertificateKey] = true;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -196,6 +206,12 @@ public static class OpenApiSetup
                 Scheme = "bearer",
                 BearerFormat = "JWT",
                 Description = "Token de acceso de POST /api/v1/auth/token."
+            },
+            [DeviceCertificateScheme] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.MutualTLS,
+                Description = "Certificado de cliente del dispositivo, emitido por la autoridad de dispositivos de Nexgate al " +
+                    "reclamarlo (POST /api/v1/device/claim), en el endpoint HTTPS de dispositivos."
             }
         };
 
@@ -238,6 +254,12 @@ public static class OpenApiSetup
 
     private static void ApplySecurity(OpenApiDocument document, OpenApiOperation operation)
     {
+        if (operation.Metadata?.TryGetValue(DeviceCertificateKey, out var device) == true && device is true)
+        {
+            operation.Security = [new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference(DeviceCertificateScheme, document)] = [] }];
+            return;
+        }
+
         if (operation.Metadata?.TryGetValue(AccessTokenKey, out var value) != true || value is not bool required)
         {
             return;

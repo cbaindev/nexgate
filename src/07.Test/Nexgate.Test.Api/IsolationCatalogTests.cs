@@ -87,7 +87,8 @@ public class IsolationCatalogTests
         ORDER BY 1
         """;
 
-    private static readonly IReadOnlyList<string> KnownSecurityDefinerFunctions = IdentityIsolationSql.SecurityDefinerFunctions;
+    private static readonly IReadOnlyList<string> KnownSecurityDefinerFunctions =
+        [.. IdentityIsolationSql.SecurityDefinerFunctions, .. Nexgate.Data.Devices.DevicesIsolationSql.SecurityDefinerFunctions];
 
     private static async Task<List<string>> UnsafeSecurityDefinerFunctionsAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction = null)
     {

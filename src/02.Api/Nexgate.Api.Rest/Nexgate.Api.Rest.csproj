@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" Version="10.2.1" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,6 +35,10 @@
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Occupancy\Nexgate.Service.Occupancy.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Access.Contracts\Nexgate.Service.Access.Contracts.csproj" />
     <ProjectReference Include="..\..\03.Service\Nexgate.Service.Access\Nexgate.Service.Access.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Devices.Contracts\Nexgate.Service.Devices.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Devices\Nexgate.Service.Devices.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Events.Contracts\Nexgate.Service.Events.Contracts.csproj" />
+    <ProjectReference Include="..\..\03.Service\Nexgate.Service.Events\Nexgate.Service.Events.csproj" />
   </ItemGroup>
 
 </Project>
