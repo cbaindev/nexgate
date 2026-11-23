@@ -10,14 +10,20 @@ function signedInAs(role: 'administrator' | 'resident') {
   fake.activeOrganization = orgA.id
 }
 
+/** Tarjeta de un sitio del listado. */
+async function siteCard(name: string) {
+  return (await screen.findByRole('heading', { name })).closest('li')!
+}
+
 describe('Pantalla de sitios', () => {
   it('lista los sitios con su tipo y zona horaria', async () => {
     signedInAs('administrator')
     fake.addSite('Torre Alvear')
     renderApp('/sitios')
 
-    expect(await screen.findByText('Torre Alvear')).toBeInTheDocument()
-    expect(screen.getByText('Edificio · America/Argentina/Cordoba')).toBeInTheDocument()
+    const card = await siteCard('Torre Alvear')
+    expect(within(card).getByText('Edificio')).toBeInTheDocument()
+    expect(within(card).getByText('America/Argentina/Cordoba')).toBeInTheDocument()
   })
 
   it('el administrador crea un sitio y aparece sin recargar', async () => {
@@ -31,8 +37,9 @@ describe('Pantalla de sitios', () => {
     await user.selectOptions(within(form).getByLabelText('Tipo'), 'gated_community')
     await user.click(within(form).getByRole('button', { name: 'Guardar' }))
 
-    expect(await screen.findByText('Edificio Mitre')).toBeInTheDocument()
-    expect(screen.getByText('Barrio cerrado · America/Argentina/Cordoba')).toBeInTheDocument()
+    const card = await siteCard('Edificio Mitre')
+    expect(within(card).getByText('Barrio cerrado')).toBeInTheDocument()
+    expect(within(card).getByText('America/Argentina/Cordoba')).toBeInTheDocument()
     expect(screen.queryByRole('form', { name: 'Nuevo sitio' })).not.toBeInTheDocument()
   })
 
@@ -84,5 +91,65 @@ describe('Pantalla de sitios', () => {
     await user.click(within(form).getByRole('button', { name: 'Guardar' }))
 
     expect(await within(form).findByText('No tenés permiso para esta operación.')).toBeInTheDocument()
+  })
+})
+
+describe('Estados de carga y vacíos', () => {
+  it('mientras llega el listado muestra esqueletos y anuncia la carga', async () => {
+    signedInAs('administrator')
+    fake.addSite('Torre Alvear')
+    let release!: () => void
+    fake.sitesGate = new Promise((resolve) => (release = resolve))
+    renderApp('/sitios')
+
+    expect(await screen.findAllByTestId('site-skeleton')).toHaveLength(3)
+    expect(screen.getByRole('status')).toHaveTextContent('Cargando…')
+    expect(screen.getByRole('status').closest('[aria-busy="true"]')).not.toBeNull()
+
+    release()
+    expect(await screen.findByText('Torre Alvear')).toBeInTheDocument()
+    expect(screen.queryByTestId('site-skeleton')).not.toBeInTheDocument()
+  })
+
+  it('sin sitios, el administrador ve el estado vacío con la acción de crear el primero', async () => {
+    signedInAs('administrator')
+    const { user } = renderApp('/sitios')
+
+    expect(await screen.findByRole('heading', { name: 'Todavía no hay sitios.' })).toBeInTheDocument()
+    expect(screen.getByText(/Un sitio es un edificio/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Crear el primer sitio' }))
+    expect(screen.getByRole('form', { name: 'Nuevo sitio' })).toBeInTheDocument()
+  })
+
+  it('sin permiso de gestión, el estado vacío no ofrece crear', async () => {
+    signedInAs('resident')
+    renderApp('/sitios')
+
+    expect(await screen.findByRole('heading', { name: 'Todavía no hay sitios.' })).toBeInTheDocument()
+    expect(screen.getByText('Cuando tengas acceso a un sitio, lo vas a ver acá.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Crear el primer sitio' })).not.toBeInTheDocument()
+  })
+})
+
+describe('Formulario en el panel lateral', () => {
+  it('se cierra con Escape sin guardar y edita un sitio existente', async () => {
+    signedInAs('administrator')
+    fake.addSite('Torre Alvear')
+    const { user } = renderApp('/sitios')
+    await siteCard('Torre Alvear')
+
+    await user.click(screen.getByRole('button', { name: 'Nuevo sitio' }))
+    expect(screen.getByRole('dialog', { name: 'Nuevo sitio' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Editar Torre Alvear' }))
+    const form = screen.getByRole('form', { name: 'Editar sitio' })
+    expect(within(form).getByLabelText('Nombre')).toHaveValue('Torre Alvear')
+    await user.clear(within(form).getByLabelText('Nombre'))
+    await user.type(within(form).getByLabelText('Nombre'), 'Torre Alvear II')
+    await user.click(within(form).getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByRole('heading', { name: 'Torre Alvear II' })).toBeInTheDocument()
   })
 })

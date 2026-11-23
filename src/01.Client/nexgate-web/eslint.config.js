@@ -25,6 +25,12 @@ export default tseslint.config(
     },
   },
   {
+    // La preferencia de tema es lo único que se guarda en el navegador: es de presentación, no de sesión
+    // (design de refine-admin-panel-design, decisión 3).
+    files: ['src/theme/theme.ts'],
+    rules: { 'no-restricted-globals': 'off' },
+  },
+  {
     // Las pruebas leen el almacenamiento para verificar que queda vacío.
     files: ['src/test/**'],
     rules: { 'no-restricted-globals': 'off', 'no-restricted-properties': 'off' },

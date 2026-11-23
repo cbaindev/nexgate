@@ -44,6 +44,8 @@ export class FakeApi {
   logoutCount = 0
   requests: string[] = []
   failNext: { path: string; status: number; body?: Record<string, unknown> } | null = null
+  /** Si está, el listado de sitios espera a que se resuelva (para ver el estado de carga). */
+  sitesGate: Promise<void> | null = null
 
   private issue() {
     this.tokenCount += 1
@@ -139,8 +141,9 @@ export class FakeApi {
 
         return HttpResponse.json({ organizationId: this.activeOrganization, permissions: this.permissions() })
       }),
-      http.get('*/api/v1/sites', ({ request }) => {
+      http.get('*/api/v1/sites', async ({ request }) => {
         this.requests.push('GET /sites')
+        await this.sitesGate
         if (!this.authorized(request)) {
           return problem(401, 'Se requiere autenticación', 'authentication_required')
         }
@@ -170,6 +173,20 @@ export class FakeApi {
         }
         this.sites.push(site)
         return HttpResponse.json(site, { status: 201 })
+      }),
+      http.put('*/api/v1/sites/:id', async ({ request, params }) => {
+        if (!this.authorized(request)) {
+          return problem(401, 'Se requiere autenticación', 'authentication_required')
+        }
+
+        const site = this.sites.find((s) => s.id === params.id && s.organizationId === this.activeOrganization)
+        if (!site) {
+          return problem(404, 'No encontrado', 'not_found')
+        }
+
+        const body = (await request.json()) as { name: string; timeZone: string }
+        Object.assign(site, { name: body.name, timeZone: body.timeZone, updatedAt: new Date().toISOString() })
+        return HttpResponse.json(site)
       }),
     ]
   }

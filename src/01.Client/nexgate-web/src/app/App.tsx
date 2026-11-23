@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { type ReactNode, useEffect, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { SitesPage } from '@/features/sites/SitesPage'
 import { onSessionReset, restore, useSession } from '@/session/session'
@@ -24,6 +24,9 @@ export function createQueryClient() {
   })
 }
 
+/** Muestra del sistema de diseño, solo en desarrollo: el build de producción no la incluye. */
+const DesignPage = import.meta.env.DEV ? lazy(() => import('./DesignPage')) : null
+
 const screens: Record<string, () => ReactNode> = {
   sites: () => <SitesPage />,
 }
@@ -42,6 +45,15 @@ function RequireSection({ section }: { section: Section }) {
 
 export function AppRoutes() {
   const session = useSession()
+  const location = useLocation()
+
+  if (DesignPage && location.pathname === '/_design') {
+    return (
+      <Suspense fallback={<LoadingPage />}>
+        <DesignPage />
+      </Suspense>
+    )
+  }
 
   switch (session.status) {
     case 'restoring':

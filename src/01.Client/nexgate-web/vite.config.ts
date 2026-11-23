@@ -16,7 +16,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'theme-init.js', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'Nexgate',
         short_name: 'Nexgate',
@@ -25,8 +25,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#0f766e',
+        background_color: '#f9f9fc',
+        theme_color: '#3f35c8',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -36,7 +36,10 @@ export default defineConfig({
       workbox: {
         // Solo los archivos del build (decisión 7): sin reglas en tiempo de ejecución, ninguna respuesta de la API se
         // guarda en el dispositivo.
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // Incluye la fuente Inter (woff2): la PWA se ve igual sin conexión (design de refine-admin-panel-design, decisión 2).
+        // Solo los subconjuntos latinos: los demás (cirílico, griego, vietnamita) se descargan si hacen falta.
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
+        globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [],

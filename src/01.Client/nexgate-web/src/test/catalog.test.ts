@@ -28,7 +28,7 @@ describe('Catálogo de textos', () => {
     for (const file of sources(root)) {
       const text = readFileSync(file, 'utf8')
       for (const match of text.matchAll(/\bt\(\s*['"]([\w.]+)['"]/g)) used.add(match[1]!)
-      for (const match of text.matchAll(/labelKey:\s*'([\w.]+)'/g)) used.add(match[1]!)
+      for (const match of text.matchAll(/(?:labelKey|descriptionKey):\s*'([\w.]+)'/g)) used.add(match[1]!)
     }
 
     expect(used.size).toBeGreaterThan(20)

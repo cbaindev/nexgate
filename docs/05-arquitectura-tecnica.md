@@ -140,6 +140,12 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
 - Como PWA, funciona igual para todos los roles; para residentes prioriza lo rápido desde el celular (invitar en segundos, mostrar QR). App nativa más adelante si se necesita BLE.
 - i18n desde el inicio (interfaz en español, catálogo `src/i18n/es.json`).
 - PWA con vite-plugin-pwa: el service worker guarda solo los archivos del build, nunca respuestas de la API.
+- **Sistema de diseño** (`refine-admin-panel-design`):
+  - Paleta índigo con acentos cian, definida como tokens de color en `src/index.css` y nunca con la paleta de Tailwind directa. Una prueba verifica el contraste WCAG AA de los dos temas.
+  - Tipografía Inter, servida desde el propio build (sin CDN).
+  - Logo e íconos generados con `npm run icons`.
+  - Componentes compartidos en `src/components/ui`, con una muestra en `/_design` (solo en desarrollo).
+- **Tema claro, oscuro o del sistema:** lo elige el usuario y se guarda en el navegador con la clave `nexgate.theme`. Es lo único que la SPA guarda ahí: es una preferencia de presentación, no un dato de sesión. `public/theme-init.js` lo aplica antes del primer pintado.
 
 ## Observabilidad y operación
 

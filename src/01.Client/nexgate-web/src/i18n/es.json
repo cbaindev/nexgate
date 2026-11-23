@@ -2,7 +2,8 @@
   "app": {
     "name": "Nexgate",
     "loading": "Cargando…",
-    "skipToContent": "Ir al contenido"
+    "skipToContent": "Ir al contenido",
+    "tagline": "Control de acceso para edificios, barrios y empresas."
   },
   "signIn": {
     "title": "Iniciar sesión",
@@ -13,7 +14,10 @@
     "submitting": "Ingresando…",
     "invalidCredentials": "El correo o la contraseña no son válidos.",
     "expired": "Tu sesión terminó. Volvé a iniciar sesión.",
-    "required": "Completá el correo y la contraseña."
+    "required": "Completá el correo y la contraseña.",
+    "emailPlaceholder": "nombre@empresa.com",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "organization": {
     "chooseTitle": "Elegí una organización",
@@ -21,7 +25,8 @@
     "switch": "Cambiar de organización",
     "current": "Organización activa",
     "none": "No tenés ninguna organización activa.",
-    "unavailable": "Ya no tenés acceso a esa organización. Elegí otra."
+    "unavailable": "Ya no tenés acceso a esa organización. Elegí otra.",
+    "signedInAs": "Ingresaste como {{email}}."
   },
   "user": {
     "menu": "Menú de la cuenta",
@@ -37,13 +42,27 @@
     "events": "Eventos",
     "members": "Miembros",
     "platform": "Plataforma",
-    "navigation": "Navegación principal"
+    "navigation": "Navegación principal",
+    "groups": {
+      "operation": "Operación",
+      "administration": "Administración"
+    },
+    "descriptions": {
+      "home": "Resumen de tu organización.",
+      "sites": "Edificios, barrios, empresas y casas.",
+      "spaces": "Árbol de espacios y puntos de acceso.",
+      "access": "Personas, horarios, credenciales y permisos.",
+      "devices": "Controladores de las puertas y su estado.",
+      "events": "Registro de entradas, salidas y rechazos.",
+      "members": "Usuarios de la organización y sus roles.",
+      "platform": "Organizaciones y operación de Nexgate."
+    }
   },
   "home": {
     "welcome": "Hola, {{email}}",
     "organization": "Estás trabajando en {{organization}}.",
     "noOrganization": "Todavía no tenés una organización activa.",
-    "pick": "Elegí una sección para empezar."
+    "pick": "Accesos rápidos"
   },
   "pages": {
     "noPermissionTitle": "Sin permiso",
@@ -93,6 +112,43 @@
       "gated_community": "Barrio cerrado",
       "company": "Empresa",
       "house": "Casa"
+    },
+    "createFirst": "Crear el primer sitio",
+    "emptyDescription": "Un sitio es un edificio, un barrio, una empresa o una casa. Creá el primero para cargar sus espacios y puertas.",
+    "emptyDescriptionReadOnly": "Cuando tengas acceso a un sitio, lo vas a ver acá.",
+    "formDescription": "Un sitio agrupa sus espacios, puertas y dispositivos.",
+    "namePlaceholder": "Por ejemplo, Torre Alvear",
+    "typeHint": "El tipo no se puede cambiar después.",
+    "close": "Cerrar"
+  },
+  "auth": {
+    "headline": "Cada puerta, cada persona y cada horario, bajo control.",
+    "features": {
+      "permissions": "Permisos por persona, puerta y horario",
+      "offline": "Puertas que siguen funcionando sin conexión",
+      "isolation": "Los datos de cada organización, aislados"
+    }
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "design": {
+    "title": "Sistema de diseño",
+    "description": "Paleta y componentes de Nexgate. Solo existe en desarrollo.",
+    "palette": "Paleta",
+    "buttons": "Botones",
+    "badges": "Insignias y avatares",
+    "alerts": "Avisos",
+    "forms": "Formularios",
+    "loading": "Carga y estados vacíos",
+    "states": {
+      "success": "Activo",
+      "warning": "Por vencer",
+      "info": "Sincronizando",
+      "danger": "Revocado"
     }
   }
 }
