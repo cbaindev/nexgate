@@ -72,10 +72,11 @@ export function toSiteLocal(iso: string, timeZone: string): string {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`
 }
 
-/** "01/12/2026 08:00" en la hora del sitio. */
-export function formatSiteDateTime(iso: string, timeZone: string): string {
+/** "01/12/2026 08:00" en la hora del sitio; con `seconds`, "01/12/2026 08:00:15". */
+export function formatSiteDateTime(iso: string, timeZone: string, options: { seconds?: boolean } = {}): string {
   const p = partsIn(Date.parse(iso), timeZone)
-  return `${pad(p.day)}/${pad(p.month)}/${p.year} ${pad(p.hour)}:${pad(p.minute)}`
+  const time = `${pad(p.hour)}:${pad(p.minute)}${options.seconds ? `:${pad(p.second)}` : ''}`
+  return `${pad(p.day)}/${pad(p.month)}/${p.year} ${time}`
 }
 
 /** Día de la semana (`monday` … `sunday`) y minuto del día en la hora del sitio. */

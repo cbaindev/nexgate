@@ -35,8 +35,8 @@ export const sections: Section[] = [
   { id: 'sites', group: 'operation', descriptionKey: 'sections.descriptions.sites', path: '/sitios', labelKey: 'sections.sites', icon: Building2, requirement: { permission: 'sites.read' }, built: true },
   { id: 'spaces', group: 'operation', descriptionKey: 'sections.descriptions.spaces', path: '/espacios', labelKey: 'sections.spaces', icon: DoorOpen, requirement: { permission: 'spaces.read' }, built: true },
   { id: 'access', group: 'operation', descriptionKey: 'sections.descriptions.access', path: '/accesos', labelKey: 'sections.access', icon: KeyRound, requirement: { permission: 'access.read' }, built: true },
-  { id: 'devices', group: 'operation', descriptionKey: 'sections.descriptions.devices', path: '/dispositivos', labelKey: 'sections.devices', icon: Router, requirement: { permission: 'devices.read' }, built: false },
-  { id: 'events', group: 'operation', descriptionKey: 'sections.descriptions.events', path: '/eventos', labelKey: 'sections.events', icon: CalendarClock, requirement: { permission: 'events.read' }, built: false },
+  { id: 'devices', group: 'operation', descriptionKey: 'sections.descriptions.devices', path: '/dispositivos', labelKey: 'sections.devices', icon: Router, requirement: { permission: 'devices.read' }, built: true },
+  { id: 'events', group: 'operation', descriptionKey: 'sections.descriptions.events', path: '/eventos', labelKey: 'sections.events', icon: CalendarClock, requirement: { permission: 'events.read' }, built: true },
   { id: 'members', group: 'administration', descriptionKey: 'sections.descriptions.members', path: '/miembros', labelKey: 'sections.members', icon: Users, requirement: { permission: 'members.read' }, built: false },
   { id: 'platform', group: 'administration', descriptionKey: 'sections.descriptions.platform', path: '/plataforma', labelKey: 'sections.platform', icon: ShieldCheck, requirement: { platformOperator: true }, built: false },
 ]

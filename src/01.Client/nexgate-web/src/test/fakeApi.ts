@@ -11,6 +11,8 @@ type Subject = components['schemas']['SubjectDto']
 type Schedule = components['schemas']['ScheduleDto']
 type Credential = components['schemas']['CredentialDto']
 type Grant = components['schemas']['GrantDto']
+type Device = components['schemas']['DeviceDto']
+type AccessEvent = components['schemas']['AccessEventDto']
 /** La API guarda solo un hash; la simulada guarda el valor para detectar duplicados y simular, y nunca lo devuelve. */
 type StoredCredential = Credential & { value: string }
 
@@ -75,6 +77,10 @@ export class FakeApi {
   schedules: Schedule[] = []
   credentials: StoredCredential[] = []
   grants: Grant[] = []
+  devices: Device[] = []
+  events: AccessEvent[] = []
+  /** Códigos de reclamo emitidos (la API real solo los devuelve una vez; acá quedan para verificar). */
+  claimCodes: string[] = []
   /** Cuerpos de las pruebas de acceso recibidas (para verificar qué envía la SPA). */
   simulationBodies: unknown[] = []
   /** Si está, reemplaza los permisos del rol (para probar alcances por espacio). */
@@ -363,7 +369,144 @@ export class FakeApi {
         return new HttpResponse(null, { status: 204 })
       }),
       ...this.accessHandlers(),
+      ...this.deviceAndEventHandlers(),
     ]
+  }
+
+  /** Dispositivos y eventos de acceso (cambio add-device-and-event-screens). */
+  private deviceAndEventHandlers() {
+    const notFound = () => problem(404, 'No encontrado', 'not_found')
+    const issue = (device: Device) => {
+      const claimCode = `CLAIM-${String(this.claimCodes.length + 1).padStart(4, '0')}-XK7P`
+      this.claimCodes.push(claimCode)
+      const claimExpiresAt = '2026-11-30T17:00:00Z'
+      Object.assign(device, { status: 'pending', claimExpiresAt })
+      return { device, claimCode, claimExpiresAt }
+    }
+
+    return [
+      http.get('*/api/v1/sites/:siteId/devices', ({ request, params }) => {
+        this.requests.push(`GET /sites/${params.siteId as string}/devices`)
+        return (
+          this.guard(request, params.siteId as string) ??
+          HttpResponse.json(this.devices.filter((d) => d.siteId === params.siteId).sort((a, b) => a.name.localeCompare(b.name)))
+        )
+      }),
+      http.post('*/api/v1/sites/:siteId/devices', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) return denied
+        const body = (await request.json()) as { name: string }
+        if (!body.name?.trim()) return problem(400, 'Datos inválidos', 'validation', { errors: { Name: ['El nombre es obligatorio.'] } })
+        if (this.devices.some((d) => d.siteId === siteId && d.name.toLowerCase() === body.name.trim().toLowerCase())) {
+          return problem(409, 'Ya hay un dispositivo con ese nombre en el sitio.', 'device_name_taken')
+        }
+        return HttpResponse.json(issue(this.addDevice(siteId, body.name.trim())), { status: 201 })
+      }),
+      http.put('*/api/v1/devices/:id', async ({ request, params }) => {
+        const device = this.devices.find((d) => d.id === params.id)
+        const denied = this.guard(request, device?.siteId)
+        if (denied || !device) return denied ?? notFound()
+        const body = (await request.json()) as { name: string }
+        if (!body.name?.trim()) return problem(400, 'Datos inválidos', 'validation', { errors: { Name: ['El nombre es obligatorio.'] } })
+        device.name = body.name.trim()
+        return HttpResponse.json(device)
+      }),
+      http.delete('*/api/v1/devices/:id', ({ request, params }) => {
+        const device = this.devices.find((d) => d.id === params.id)
+        const denied = this.guard(request, device?.siteId)
+        if (denied || !device) return denied ?? notFound()
+        this.devices = this.devices.filter((d) => d.id !== device.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.put('*/api/v1/devices/:id/access-points', async ({ request, params }) => {
+        const device = this.devices.find((d) => d.id === params.id)
+        const denied = this.guard(request, device?.siteId)
+        if (denied || !device) return denied ?? notFound()
+        const body = (await request.json()) as { accessPointIds: string[] }
+        if (body.accessPointIds.some((id) => !this.accessPoints.some((a) => a.id === id && a.siteId === device.siteId))) {
+          return problem(400, 'Datos inválidos', 'validation', { errors: { AccessPointIds: ['Puerta inválida.'] } })
+        }
+        if (this.devices.some((d) => d.id !== device.id && d.accessPointIds.some((id) => body.accessPointIds.includes(id)))) {
+          return problem(409, 'Otra puerta ya la controla otro dispositivo.', 'access_point_taken')
+        }
+        device.accessPointIds = body.accessPointIds
+        return HttpResponse.json(device)
+      }),
+      http.post('*/api/v1/devices/:id/claim-code', ({ request, params }) => {
+        const device = this.devices.find((d) => d.id === params.id)
+        const denied = this.guard(request, device?.siteId)
+        if (denied || !device) return denied ?? notFound()
+        return HttpResponse.json(issue(device))
+      }),
+      http.post('*/api/v1/devices/:id/revocation', ({ request, params }) => {
+        const device = this.devices.find((d) => d.id === params.id)
+        const denied = this.guard(request, device?.siteId)
+        if (denied || !device) return denied ?? notFound()
+        Object.assign(device, { status: 'revoked', claimExpiresAt: null })
+        return HttpResponse.json(device)
+      }),
+
+      http.get('*/api/v1/sites/:siteId/access-events', ({ request, params }) => {
+        const url = new URL(request.url)
+        this.requests.push(`GET /sites/${params.siteId as string}/access-events${url.search}`)
+        const denied = this.guard(request, params.siteId as string)
+        if (denied) return denied
+        const q = url.searchParams
+        const limit = Number(q.get('limit') ?? 50)
+        const offset = Number(q.get('cursor') ?? 0)
+        const matching = this.events
+          .filter(
+            (e) =>
+              e.siteId === params.siteId &&
+              (!q.get('accessPointId') || e.accessPointId === q.get('accessPointId')) &&
+              (!q.get('subjectId') || e.subjectId === q.get('subjectId')) &&
+              (!q.get('from') || e.occurredAt >= q.get('from')!) &&
+              (!q.get('to') || e.occurredAt < q.get('to')!),
+          )
+          .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+        const items = matching.slice(offset, offset + limit)
+        return HttpResponse.json({ items, nextCursor: offset + limit < matching.length ? String(offset + limit) : null })
+      }),
+    ]
+  }
+
+  addDevice(siteId: string, name: string, options: Partial<Device> = {}): Device {
+    const device: Device = {
+      id: crypto.randomUUID(),
+      siteId,
+      name,
+      status: 'active',
+      accessPointIds: [],
+      lastSeenAt: null,
+      firmwareVersion: null,
+      reportedPolicyVersion: null,
+      policyVersion: null,
+      certificateExpiresAt: null,
+      claimExpiresAt: null,
+      ...options,
+    }
+    this.devices.push(device)
+    return device
+  }
+
+  addEvent(device: Device, point: { id: string }, occurredAt: string, options: Partial<AccessEvent> = {}): AccessEvent {
+    const event: AccessEvent = {
+      id: crypto.randomUUID(),
+      siteId: device.siteId,
+      deviceId: device.id,
+      accessPointId: point.id,
+      occurredAt,
+      receivedAt: occurredAt,
+      decision: 'allow',
+      reason: 'allowed',
+      credentialId: null,
+      subjectId: null,
+      policyVersion: 1,
+      ...options,
+    }
+    this.events.push(event)
+    return event
   }
 
   /** Sujetos, horarios, credenciales, permisos y prueba de acceso (cambio add-access-screens). */

@@ -3,9 +3,8 @@ import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Route, Routes, useLocation } from 'react-router'
 import { ApiError } from '@/api/errors'
+import { Skeleton } from '@/components/ui/skeleton'
 import { SitesPage } from '@/features/sites/SitesPage'
-import { AccessPage } from '@/features/access/AccessPage'
-import { SpacesPage } from '@/features/spaces/SpacesPage'
 import { onSessionReset, restore, useSession } from '@/session/session'
 import { ChooseOrganizationPage } from './ChooseOrganizationPage'
 import { Layout } from './Layout'
@@ -29,10 +28,32 @@ export function createQueryClient() {
 /** Muestra del sistema de diseño, solo en desarrollo: el build de producción no la incluye. */
 const DesignPage = import.meta.env.DEV ? lazy(() => import('./DesignPage')) : null
 
+// Las secciones por sitio se cargan al abrirlas: cada una baja su código aparte y el inicio no crece con cada pantalla
+// nueva (design de add-device-and-event-screens). El service worker igual las precarga para usarlas sin conexión.
+const SpacesPage = lazy(() => import('@/features/spaces/SpacesPage').then((m) => ({ default: m.SpacesPage })))
+const AccessPage = lazy(() => import('@/features/access/AccessPage').then((m) => ({ default: m.AccessPage })))
+const DevicesPage = lazy(() => import('@/features/devices/DevicesPage').then((m) => ({ default: m.DevicesPage })))
+const EventsPage = lazy(() => import('@/features/events/EventsPage').then((m) => ({ default: m.EventsPage })))
+
 const screens: Record<string, () => ReactNode> = {
   sites: () => <SitesPage />,
   spaces: () => <SpacesPage />,
   access: () => <AccessPage />,
+  devices: () => <DevicesPage />,
+  events: () => <EventsPage />,
+}
+
+function SectionLoading() {
+  const { t } = useTranslation()
+  return (
+    <div aria-busy="true" className="space-y-4">
+      <span role="status" className="sr-only">
+        {t('app.loading')}
+      </span>
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-48" />
+    </div>
+  )
 }
 
 /** Muestra la sección solo con su permiso; si no, "sin permiso" sin montar la pantalla (no pide datos). */
@@ -44,7 +65,7 @@ function RequireSection({ section }: { section: Section }) {
   }
 
   const screen = section.built ? screens[section.id] : undefined
-  return screen ? screen() : <ComingSoonPage title={t(section.labelKey)} />
+  return screen ? <Suspense fallback={<SectionLoading />}>{screen()}</Suspense> : <ComingSoonPage title={t(section.labelKey)} />
 }
 
 export function AppRoutes() {

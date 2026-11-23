@@ -50,10 +50,10 @@ describe('Navegación por permisos', () => {
 
   it('una sección sin pantallas todavía dice que llega en un próximo cambio', async () => {
     signedInAs('administrator')
-    renderApp('/eventos')
+    renderApp('/miembros')
 
     expect(await screen.findByText('Esta sección llega en un próximo cambio.')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Eventos' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Miembros' })).toBeInTheDocument()
   })
 
   it('una dirección inexistente muestra "página no encontrada"', async () => {

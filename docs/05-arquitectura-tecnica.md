@@ -152,6 +152,11 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
   - **Fechas y horas** en la zona horaria del sitio.
   - **Valor de una credencial:** se escribe una vez y la SPA no lo guarda en ningún lado.
   - **Selector de sitio:** ofrece solo los sitios que el permiso de accesos cubre entero.
+- **Dispositivos y eventos** (`add-device-and-event-screens`):
+  - **Dispositivos:** alta y asignación de puertas. El código de reclamo se muestra una sola vez, en texto y QR, y la SPA no lo guarda.
+  - **Estado de cada dispositivo:** conexión, política y certificado, refrescado cada 30 s.
+  - **Eventos:** se actualizan solos cada 15 s mientras la pestaña está visible. El tiempo real por WebSocket llega en el cambio 16.
+  - **Carga:** las secciones se cargan bajo demanda (`lazy`) para que el bundle inicial no crezca con cada pantalla.
 
 ## Observabilidad y operación
 

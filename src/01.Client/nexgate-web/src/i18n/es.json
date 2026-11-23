@@ -406,6 +406,118 @@
       "notAnEvent": "La prueba no abre la puerta, no queda registrada y no consume usos."
     }
   },
+  "devices": {
+    "title": "Dispositivos",
+    "description": "Los controladores de las puertas: estado, conexión, política y qué puertas maneja cada uno.",
+    "noSitesDescription": "Los dispositivos se ven por sitio entero. Cuando tengas acceso a un sitio completo, lo vas a poder elegir acá.",
+    "listLabel": "Dispositivos del sitio",
+    "pick": "Elegí un dispositivo para ver su estado y sus puertas.",
+    "empty": "Este sitio todavía no tiene dispositivos.",
+    "emptyDescription": "Un dispositivo controla una o más puertas y decide quién pasa, también sin conexión.",
+    "create": "Nuevo dispositivo",
+    "createFirst": "Dar de alta el primer dispositivo",
+    "createTitle": "Nuevo dispositivo",
+    "createDescription": "Al guardarlo vas a ver el código para reclamarlo desde el equipo.",
+    "renameTitle": "Renombrar dispositivo",
+    "renameDescription": "El nombre lo identifica en las listas y los eventos.",
+    "namePlaceholder": "Por ejemplo, Controlador hall Torre A",
+    "rename": "Renombrar",
+    "assign": "Puertas",
+    "assignTitle": "Puertas de {{name}}",
+    "assignDescription": "Marcá las puertas que controla. Una puerta la controla un solo dispositivo.",
+    "controlledBy": "La controla {{name}}",
+    "noPoints": "El sitio todavía no tiene puertas.",
+    "newCode": "Código nuevo",
+    "revoke": "Revocar",
+    "status": {
+      "pending": "Pendiente",
+      "active": "Activo",
+      "revoked": "Revocado"
+    },
+    "connection": {
+      "online": "En línea",
+      "offline": "Sin contacto",
+      "never": "Nunca se conectó"
+    },
+    "lastSeen": "Último contacto",
+    "never": "Nunca",
+    "policy": "Política",
+    "policyCurrent": "Al día",
+    "policyPending": "Actualización pendiente (v{{reported}} de v{{current}})",
+    "policyNone": "Todavía no tiene política",
+    "firmware": "Firmware",
+    "certificate": "Certificado vence",
+    "certificateSoon": "El certificado vence el {{at}}. Generá un código nuevo y reclamalo antes para que no deje de funcionar.",
+    "pendingClaim": "Esperando que se reclame desde el equipo. El código vence el {{at}}.",
+    "revokedNotice": "Revocado: no funciona. Para volver a usarlo, generá un código nuevo y reclamalo.",
+    "points": "Puertas que controla",
+    "pointsLabel": "Puertas de {{name}}",
+    "pointsNone": "No controla ninguna puerta.",
+    "confirmTitle": {
+      "revoke": "¿Revocar {{name}}?",
+      "claim": "¿Generar un código nuevo para {{name}}?",
+      "delete": "¿Eliminar {{name}}?"
+    },
+    "confirm": {
+      "revoke": "Deja de funcionar enseguida y conserva sus puertas. Para volver a usarlo hay que generar un código nuevo y reclamarlo.",
+      "claim": "El dispositivo deja de funcionar hasta que se reclame con el código nuevo.",
+      "delete": "Se elimina, deja de funcionar y sus puertas quedan libres para otro dispositivo. No se puede deshacer."
+    },
+    "confirmAction": {
+      "revoke": "Revocar",
+      "claim": "Generar código",
+      "delete": "Eliminar"
+    },
+    "claim": {
+      "title": "Código de reclamo de {{name}}",
+      "description": "Escribilo o escanealo desde el equipo para que obtenga su certificado.",
+      "qrLabel": "Código QR del código de reclamo",
+      "codeLabel": "Código de reclamo",
+      "expires": "Vence el {{at}}.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "once": "No se vuelve a mostrar. Si lo perdés, generá uno nuevo.",
+      "done": "Listo"
+    }
+  },
+  "events": {
+    "title": "Eventos",
+    "description": "Quién pasó y quién fue rechazado en cada puerta, del más reciente al más viejo.",
+    "noSitesDescription": "Los eventos se ven por sitio entero. Cuando tengas acceso a un sitio completo, lo vas a poder elegir acá.",
+    "filters": "Filtros de eventos",
+    "point": "Puerta",
+    "subject": "Persona",
+    "all": "Todas",
+    "clear": "Limpiar",
+    "tableLabel": "Eventos de {{site}}",
+    "time": "Hora",
+    "result": "Resultado",
+    "device": "Dispositivo",
+    "unidentified": "Sin identificar",
+    "offline": "Registrado sin conexión",
+    "decisions": {
+      "allow": "Permitido",
+      "deny": "Denegado"
+    },
+    "reasons": {
+      "allowed": "Un permiso lo habilitaba.",
+      "no_permission": "Ningún permiso vigente lo habilitaba a esa hora.",
+      "explicit_deny": "Una denegación ganó sobre los permisos.",
+      "credential_invalid": "Credencial desconocida, vencida o todavía no vigente."
+    },
+    "empty": "Todavía no hay eventos en este sitio.",
+    "emptyFiltered": "Ningún evento coincide con los filtros.",
+    "emptyDescription": "Cada vez que alguien presenta una credencial en una puerta, el dispositivo lo registra y aparece acá.",
+    "loadMore": "Cargar más eventos",
+    "noMore": "No hay más eventos.",
+    "live": "Se actualiza sola cada 15 segundos.",
+    "paused": "Actualización en pausa.",
+    "liveOffRange": "Sin actualización automática: el rango tiene fin.",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "newCount_one": "{{count}} evento nuevo",
+    "newCount_other": "{{count}} eventos nuevos"
+  },
   "auth": {
     "headline": "Cada puerta, cada persona y cada horario, bajo control.",
     "features": {

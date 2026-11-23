@@ -64,5 +64,7 @@ export default defineConfig({
     restoreMocks: true,
     // Una zona lejos de la de los sitios: las pantallas deben usar la hora del sitio, no la del navegador.
     env: { TZ: 'Asia/Tokyo' },
+    // Pruebas de integración de pantallas completas: con todas en paralelo, 5 s por prueba se queda corto.
+    testTimeout: 15_000,
   },
 })

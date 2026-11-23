@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { EmptyState } from '@/components/ui/empty-state'
 import { FieldError, FieldHint, Input, Label, Select } from '@/components/ui/form'
 import { PageHeader } from '@/components/ui/page-header'
+import { QrCode } from '@/components/ui/qr-code'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -197,6 +198,7 @@ export default function DesignPage() {
             {t('spaces.delete')}
           </Button>
         </div>
+        <QrCode value="CLAIM-0001-XK7P" label={t('devices.claim.qrLabel')} className="size-32" />
         <ConfirmDialog
           open={confirming}
           onOpenChange={setConfirming}
