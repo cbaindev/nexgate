@@ -3,6 +3,9 @@ import type { components } from '@/api/schema'
 
 type Site = components['schemas']['SiteDto']
 type Permission = components['schemas']['PermissionResponse']
+type Space = components['schemas']['SpaceDto']
+type AccessPoint = components['schemas']['AccessPointDto']
+type AccessPointBody = Omit<AccessPoint, 'id' | 'siteId'>
 
 export type Role = 'administrator' | 'guard' | 'resident'
 
@@ -46,6 +49,12 @@ export class FakeApi {
   failNext: { path: string; status: number; body?: Record<string, unknown> } | null = null
   /** Si está, el listado de sitios espera a que se resuelva (para ver el estado de carga). */
   sitesGate: Promise<void> | null = null
+  spaces: Space[] = []
+  accessPoints: AccessPoint[] = []
+  /** Puertas que controla algún dispositivo: no se pueden eliminar. */
+  deviceAccessPoints = new Set<string>()
+  /** Si está, reemplaza los permisos del rol (para probar alcances por espacio). */
+  permissionsOverride: Permission[] | null = null
 
   private issue() {
     this.tokenCount += 1
@@ -60,6 +69,10 @@ export class FakeApi {
   private permissions(): Permission[] {
     if (this.activeOrganization === null) {
       return []
+    }
+
+    if (this.permissionsOverride) {
+      return this.permissionsOverride
     }
 
     return (permissionsByRole[this.roles[this.activeOrganization] ?? 'resident'] ?? []).map((name) => ({
@@ -188,7 +201,197 @@ export class FakeApi {
         Object.assign(site, { name: body.name, timeZone: body.timeZone, updatedAt: new Date().toISOString() })
         return HttpResponse.json(site)
       }),
+      http.get('*/api/v1/sites/:siteId/spaces', ({ request, params }) => {
+        this.requests.push(`GET /sites/${params.siteId as string}/spaces`)
+        return this.guard(request, params.siteId as string) ?? HttpResponse.json(this.spaces.filter((s) => s.siteId === params.siteId))
+      }),
+      http.post('*/api/v1/sites/:siteId/spaces', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) {
+          return denied
+        }
+
+        const body = (await request.json()) as { name: string; type: string; parentId: string | null; isCommon: boolean }
+        if (!body.name?.trim()) {
+          return problem(400, 'Datos inválidos', 'validation', { errors: { Name: ['El nombre es obligatorio.'] } })
+        }
+
+        const parent = body.parentId ? this.spaces.find((s) => s.id === body.parentId && s.siteId === siteId) : null
+        if (body.parentId && !parent) {
+          return problem(400, 'Datos inválidos', 'validation', { errors: { ParentId: ['El espacio padre no existe.'] } })
+        }
+
+        if (!parent && this.spaces.some((s) => s.siteId === siteId && s.parentId === null)) {
+          return problem(409, 'El sitio ya tiene un espacio raíz.', 'space_root_exists')
+        }
+
+        if (this.siblingNamed(siteId, body.parentId, body.name)) {
+          return problem(409, 'Ya hay un espacio con ese nombre en el mismo lugar.', 'space_name_taken')
+        }
+
+        const space = this.addSpace(siteId, body.name, body.type, parent ?? null, body.isCommon)
+        return HttpResponse.json(space, { status: 201 })
+      }),
+      http.put('*/api/v1/spaces/:id', async ({ request, params }) => {
+        const space = this.spaces.find((s) => s.id === params.id)
+        const denied = this.guard(request, space?.siteId)
+        if (denied || !space) {
+          return denied ?? problem(404, 'No encontrado', 'not_found')
+        }
+
+        const body = (await request.json()) as { name: string; type: string; isCommon: boolean }
+        if (!body.name?.trim()) {
+          return problem(400, 'Datos inválidos', 'validation', { errors: { Name: ['El nombre es obligatorio.'] } })
+        }
+
+        if (this.siblingNamed(space.siteId, space.parentId, body.name, space.id)) {
+          return problem(409, 'Ya hay un espacio con ese nombre en el mismo lugar.', 'space_name_taken')
+        }
+
+        Object.assign(space, { name: body.name, type: body.type, isCommon: body.isCommon })
+        return HttpResponse.json(space)
+      }),
+      http.delete('*/api/v1/spaces/:id', ({ request, params }) => {
+        const space = this.spaces.find((s) => s.id === params.id)
+        const denied = this.guard(request, space?.siteId)
+        if (denied || !space) {
+          return denied ?? problem(404, 'No encontrado', 'not_found')
+        }
+
+        const used =
+          this.spaces.some((s) => s.parentId === space.id) ||
+          this.accessPoints.some((a) => a.toSpaceId === space.id || a.fromSpaceId === space.id)
+        if (used) {
+          return problem(409, 'El espacio tiene espacios o puertas adentro.', 'space_in_use')
+        }
+
+        this.spaces = this.spaces.filter((s) => s.id !== space.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.get('*/api/v1/spaces/:id/access-path', ({ request, params }) => {
+        this.requests.push(`GET /spaces/${params.id as string}/access-path`)
+        const space = this.spaces.find((s) => s.id === params.id)
+        const denied = this.guard(request, space?.siteId)
+        if (denied || !space) {
+          return denied ?? problem(404, 'No encontrado', 'not_found')
+        }
+
+        const path = [...space.ancestorIds, space.id]
+        const depth = (id: string) => this.spaces.find((s) => s.id === id)!.depth
+        return HttpResponse.json(
+          this.accessPoints
+            .filter((a) => path.includes(a.toSpaceId))
+            .map((a) => ({ ...a, toSpaceDepth: depth(a.toSpaceId) }))
+            .sort((a, b) => a.toSpaceDepth - b.toSpaceDepth || a.name.localeCompare(b.name)),
+        )
+      }),
+      http.get('*/api/v1/sites/:siteId/access-points', ({ request, params }) => {
+        return (
+          this.guard(request, params.siteId as string) ?? HttpResponse.json(this.accessPoints.filter((a) => a.siteId === params.siteId))
+        )
+      }),
+      http.post('*/api/v1/sites/:siteId/access-points', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) {
+          return denied
+        }
+
+        const body = (await request.json()) as AccessPointBody
+        const invalid = this.invalidAccessPoint(siteId, body)
+        if (invalid) {
+          return invalid
+        }
+
+        const point: AccessPoint = { id: crypto.randomUUID(), siteId, ...body }
+        this.accessPoints.push(point)
+        return HttpResponse.json(point, { status: 201 })
+      }),
+      http.put('*/api/v1/access-points/:id', async ({ request, params }) => {
+        const point = this.accessPoints.find((a) => a.id === params.id)
+        const denied = this.guard(request, point?.siteId)
+        if (denied || !point) {
+          return denied ?? problem(404, 'No encontrado', 'not_found')
+        }
+
+        const body = (await request.json()) as AccessPointBody
+        const invalid = this.invalidAccessPoint(point.siteId, body, point.id)
+        if (invalid) {
+          return invalid
+        }
+
+        Object.assign(point, body)
+        return HttpResponse.json(point)
+      }),
+      http.delete('*/api/v1/access-points/:id', ({ request, params }) => {
+        const point = this.accessPoints.find((a) => a.id === params.id)
+        const denied = this.guard(request, point?.siteId)
+        if (denied || !point) {
+          return denied ?? problem(404, 'No encontrado', 'not_found')
+        }
+
+        if (this.deviceAccessPoints.has(point.id)) {
+          return problem(409, 'La puerta la controla un dispositivo.', 'access_point_in_use')
+        }
+
+        this.accessPoints = this.accessPoints.filter((a) => a.id !== point.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
     ]
+  }
+
+  /** 401 sin sesión y 404 si el sitio no es de la organización activa o no existe. */
+  private guard(request: Request, siteId: string | undefined) {
+    if (!this.authorized(request)) {
+      return problem(401, 'Se requiere autenticación', 'authentication_required')
+    }
+
+    const site = this.sites.find((s) => s.id === siteId && s.organizationId === this.activeOrganization)
+    return site ? null : problem(404, 'No encontrado', 'not_found')
+  }
+
+  private siblingNamed(siteId: string, parentId: string | null, name: string, except?: string) {
+    const wanted = name.trim().toLowerCase()
+    return this.spaces.some((s) => s.siteId === siteId && s.parentId === parentId && s.id !== except && s.name.toLowerCase() === wanted)
+  }
+
+  private invalidAccessPoint(siteId: string, body: AccessPointBody, except?: string) {
+    const errors: Record<string, string[]> = {}
+    if (!body.name?.trim()) errors.Name = ['El nombre es obligatorio.']
+    if (!body.failMode) errors.FailMode = ['Elegí qué hace la puerta sin energía.']
+    if (!this.spaces.some((s) => s.id === body.toSpaceId && s.siteId === siteId)) errors.ToSpaceId = ['Elegí a qué espacio da.']
+    if (Object.keys(errors).length > 0) {
+      return problem(400, 'Datos inválidos', 'validation', { errors })
+    }
+
+    const wanted = body.name.trim().toLowerCase()
+    if (this.accessPoints.some((a) => a.siteId === siteId && a.id !== except && a.name.toLowerCase() === wanted)) {
+      return problem(409, 'Ya hay una puerta con ese nombre en el sitio.', 'access_point_name_taken')
+    }
+
+    return null
+  }
+
+  addSpace(siteId: string, name: string, type: string, parent: Space | null = null, isCommon = false): Space {
+    const space: Space = {
+      id: crypto.randomUUID(),
+      siteId,
+      parentId: parent?.id ?? null,
+      type,
+      name,
+      isCommon,
+      depth: parent ? parent.depth + 1 : 0,
+      ancestorIds: parent ? [...parent.ancestorIds, parent.id] : [],
+    }
+    this.spaces.push(space)
+    return space
+  }
+
+  addAccessPoint(name: string, to: Space, from: Space | null = null, type = 'door', failMode = 'fail_secure'): AccessPoint {
+    const point: AccessPoint = { id: crypto.randomUUID(), siteId: to.siteId, name, type, toSpaceId: to.id, fromSpaceId: from?.id ?? null, failMode }
+    this.accessPoints.push(point)
+    return point
   }
 
   addSite(name: string, organizationId = orgA.id): Site {

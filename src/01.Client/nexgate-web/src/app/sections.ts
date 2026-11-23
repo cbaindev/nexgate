@@ -33,7 +33,7 @@ export interface Section {
 export const sections: Section[] = [
   { id: 'home', group: 'main', descriptionKey: 'sections.descriptions.home', path: '/', labelKey: 'sections.home', icon: LayoutDashboard, requirement: null, built: true },
   { id: 'sites', group: 'operation', descriptionKey: 'sections.descriptions.sites', path: '/sitios', labelKey: 'sections.sites', icon: Building2, requirement: { permission: 'sites.read' }, built: true },
-  { id: 'spaces', group: 'operation', descriptionKey: 'sections.descriptions.spaces', path: '/espacios', labelKey: 'sections.spaces', icon: DoorOpen, requirement: { permission: 'spaces.read' }, built: false },
+  { id: 'spaces', group: 'operation', descriptionKey: 'sections.descriptions.spaces', path: '/espacios', labelKey: 'sections.spaces', icon: DoorOpen, requirement: { permission: 'spaces.read' }, built: true },
   { id: 'access', group: 'operation', descriptionKey: 'sections.descriptions.access', path: '/accesos', labelKey: 'sections.access', icon: KeyRound, requirement: { permission: 'access.read' }, built: false },
   { id: 'devices', group: 'operation', descriptionKey: 'sections.descriptions.devices', path: '/dispositivos', labelKey: 'sections.devices', icon: Router, requirement: { permission: 'devices.read' }, built: false },
   { id: 'events', group: 'operation', descriptionKey: 'sections.descriptions.events', path: '/eventos', labelKey: 'sections.events', icon: CalendarClock, requirement: { permission: 'events.read' }, built: false },

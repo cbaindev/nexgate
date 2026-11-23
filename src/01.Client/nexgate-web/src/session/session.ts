@@ -265,3 +265,29 @@ export function hasPermissionOnSite(session: Session, permission: string, siteId
   const grant = session.permissions.find((p) => p.name === permission)
   return !!grant && (grant.organization || (siteId !== undefined && grant.siteIds.includes(siteId)))
 }
+
+/**
+ * El permiso sobre un espacio: con alcance de organización, del sitio del espacio, del espacio mismo o de uno de sus
+ * ancestros (design de add-spaces-screens, decisión 5). Es solo presentación: el servidor verifica cada operación.
+ */
+export function hasPermissionOnSpace(
+  session: Session,
+  permission: string,
+  space: { id: string; siteId: string; ancestorIds: string[] },
+) {
+  if (session.status !== 'active') {
+    return false
+  }
+
+  const grant = session.permissions.find((p) => p.name === permission)
+  if (!grant) {
+    return false
+  }
+
+  if (grant.organization || grant.siteIds.includes(space.siteId)) {
+    return true
+  }
+
+  const scoped = new Set(grant.spaces.filter((s) => s.siteId === space.siteId).map((s) => s.spaceId))
+  return scoped.has(space.id) || space.ancestorIds.some((id) => scoped.has(id))
+}

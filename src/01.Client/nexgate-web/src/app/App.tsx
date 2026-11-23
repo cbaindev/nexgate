@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Route, Routes, useLocation } from 'react-router'
 import { ApiError } from '@/api/errors'
 import { SitesPage } from '@/features/sites/SitesPage'
+import { SpacesPage } from '@/features/spaces/SpacesPage'
 import { onSessionReset, restore, useSession } from '@/session/session'
 import { ChooseOrganizationPage } from './ChooseOrganizationPage'
 import { Layout } from './Layout'
@@ -29,6 +30,7 @@ const DesignPage = import.meta.env.DEV ? lazy(() => import('./DesignPage')) : nu
 
 const screens: Record<string, () => ReactNode> = {
   sites: () => <SitesPage />,
+  spaces: () => <SpacesPage />,
 }
 
 /** Muestra la sección solo con su permiso; si no, "sin permiso" sin montar la pantalla (no pide datos). */

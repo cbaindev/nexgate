@@ -1,8 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { App, createQueryClient } from '@/app/App'
 import { fake } from './setup'
+
+/** Dirección actual de la aplicación montada (ruta y consulta), para verificar lo que queda en la dirección. */
+export const location = { current: '' }
+
+function LocationProbe() {
+  const { pathname, search } = useLocation()
+  location.current = pathname + search
+  return null
+}
 
 /** Monta la aplicación en una ruta, como al abrir esa dirección (restaura la sesión al arrancar). */
 export function renderApp(path = '/') {
@@ -11,6 +20,7 @@ export function renderApp(path = '/') {
   const result = render(
     <MemoryRouter initialEntries={[path]}>
       <App queryClient={queryClient} />
+      <LocationProbe />
     </MemoryRouter>,
   )
   return { ...result, user, queryClient }

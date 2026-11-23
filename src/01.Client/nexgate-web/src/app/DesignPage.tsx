@@ -1,17 +1,20 @@
 import { Building2, Plus } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/brand/Logo'
 import { Alert } from '@/components/ui/alert'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FieldError, FieldHint, Input, Label, Select } from '@/components/ui/form'
 import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ThemeButton } from './ThemeMenu'
 
 // Nombres de los tokens de color (identificadores del sistema de diseño, no textos de interfaz).
@@ -47,6 +50,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  */
 export default function DesignPage() {
   const { t } = useTranslation()
+  const [confirming, setConfirming] = useState(false)
   return (
     <div className="mx-auto max-w-5xl space-y-12 px-4 py-8 md:px-8">
       <div className="flex items-center justify-between">
@@ -154,6 +158,54 @@ export default function DesignPage() {
             {t('sites.emptyDescription')}
           </EmptyState>
         </div>
+      </Section>
+
+      <Section title={t('design.navigation')}>
+        <Tabs defaultValue="spaces">
+          <TabsList aria-label={t('spaces.tabs.label')}>
+            <TabsTrigger value="spaces">{t('spaces.tabs.spaces')}</TabsTrigger>
+            <TabsTrigger value="points">{t('spaces.tabs.points')}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Table aria-label={t('spaces.tabs.points')}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('spaces.points.name')}</TableHead>
+              <TableHead>{t('spaces.points.type')}</TableHead>
+              <TableHead>{t('spaces.points.withoutPower')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">Portón principal</TableCell>
+              <TableCell>{t('spaces.points.types.gate')}</TableCell>
+              <TableCell>
+                <Badge variant="secondary">{t('spaces.points.failModesShort.fail_secure')}</Badge>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Salida de emergencia</TableCell>
+              <TableCell>{t('spaces.points.types.door')}</TableCell>
+              <TableCell>
+                <Badge variant="warning">{t('spaces.points.failModesShort.fail_safe')}</Badge>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+        <div>
+          <Button variant="destructive" onClick={() => setConfirming(true)}>
+            {t('spaces.delete')}
+          </Button>
+        </div>
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={t('spaces.deleteTitle', { name: 'Piso 5' })}
+          description={t('spaces.deleteDescription')}
+          confirmLabel={t('spaces.delete')}
+          cancelLabel={t('spaces.cancel')}
+          onConfirm={() => setConfirming(false)}
+        />
       </Section>
     </div>
   )

@@ -32,7 +32,7 @@ export const buttonVariants = cva(
   },
 )
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   asChild?: boolean
   /** Muestra un indicador de carga y deshabilita el botón. */
   loading?: boolean
