@@ -18,8 +18,13 @@ function sources(directory: string): string[] {
   })
 }
 
+function lookup(key: string) {
+  return key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], es)
+}
+
+/** La clave existe tal cual o con sus formas de plural de i18next (`_one` y `_other`). */
 function has(key: string) {
-  return key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], es) !== undefined
+  return lookup(key) !== undefined || (lookup(`${key}_one`) !== undefined && lookup(`${key}_other`) !== undefined)
 }
 
 describe('Catálogo de textos', () => {
@@ -33,6 +38,19 @@ describe('Catálogo de textos', () => {
 
     expect(used.size).toBeGreaterThan(20)
     expect([...used].filter((key) => !has(key))).toEqual([])
+  })
+
+  it('tiene los textos de los valores que vienen de la API', () => {
+    const keys = [
+      ...['site', 'building', 'floor', 'unit', 'common_area', 'parking', 'lot', 'zone'].map((v) => `spaces.types.${v}`),
+      ...['door', 'gate', 'barrier', 'turnstile', 'elevator'].map((v) => `spaces.points.types.${v}`),
+      ...['person', 'anonymous'].map((v) => `access.subjects.kinds.${v}`),
+      ...['card', 'rf', 'pin'].map((v) => `access.credentials.types.${v}`),
+      ...['allow', 'deny'].map((v) => `access.grants.effects.${v}`),
+      ...['allowed', 'no_permission', 'explicit_deny', 'credential_invalid'].map((v) => `access.test.reasons.${v}`),
+      ...['valid', 'notYet', 'expired'].map((v) => `access.validity.${v}`),
+    ]
+    expect(keys.filter((key) => !has(key))).toEqual([])
   })
 
   it('tiene el nombre de cada tipo de sitio', () => {

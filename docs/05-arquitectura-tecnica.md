@@ -147,6 +147,11 @@ Las migraciones lo generan con `migrationBuilder.EnableTenantIsolation(schema, t
   - Componentes compartidos en `src/components/ui`, con una muestra en `/_design` (solo en desarrollo).
 - **Tema claro, oscuro o del sistema:** lo elige el usuario y se guarda en el navegador con la clave `nexgate.theme`. Es lo único que la SPA guarda ahí: es una preferencia de presentación, no un dato de sesión. `public/theme-init.js` lo aplica antes del primer pintado.
 - **Secciones por sitio** (`add-spaces-screens`): espacios y puertas, y después accesos, dispositivos y eventos, trabajan dentro de un sitio que se elige en el encabezado. El sitio va en la dirección (`?sitio=`), así un enlace o una recarga abren el mismo. Las acciones se muestran según el alcance del permiso (organización, sitio o espacio y su subárbol), y el servidor sigue decidiendo cada operación.
+- **Accesos** (`add-access-screens`):
+  - **Pantalla centrada en la persona:** cada sujeto con sus credenciales y sus permisos, más horarios y la prueba de acceso, que también se ofrece desde cada puerta.
+  - **Fechas y horas** en la zona horaria del sitio.
+  - **Valor de una credencial:** se escribe una vez y la SPA no lo guarda en ningún lado.
+  - **Selector de sitio:** ofrece solo los sitios que el permiso de accesos cubre entero.
 
 ## Observabilidad y operación
 

@@ -32,7 +32,7 @@ export type SelectedSite =
  * Sitio elegido en la dirección (`?sitio=`), entre los sitios visibles de la organización activa. Con un solo sitio
  * visible lo elige solo. Usa la misma consulta que la pantalla de sitios, así no hay un pedido extra.
  */
-export function useSelectedSite(): SelectedSite & { choose: (siteId: string) => void } {
+export function useSelectedSite(options: { permission?: string } = {}): SelectedSite & { choose: (siteId: string) => void } {
   const session = useSession()
   const organizationId = session.status === 'active' ? session.organizationId : null
   const [params, setParams] = useSearchParams()
@@ -41,7 +41,9 @@ export function useSelectedSite(): SelectedSite & { choose: (siteId: string) => 
     queryFn: async () => unwrap(await api.GET('/api/v1/sites')),
   })
   const requested = params.get(siteParam)
-  const only = sites.data?.length === 1 ? sites.data[0] : undefined
+  // Una sección cuyo permiso exige el sitio entero (accesos) ofrece solo los sitios que ese permiso cubre.
+  const usable = options.permission ? sites.data?.filter((s) => hasPermissionOnSite(session, options.permission!, s.id)) : sites.data
+  const only = usable?.length === 1 ? usable[0] : undefined
 
   const choose = (siteId: string) =>
     setParams(
@@ -70,7 +72,7 @@ export function useSelectedSite(): SelectedSite & { choose: (siteId: string) => 
 
   if (sites.isPending) return { status: 'loading', choose }
   if (sites.isError) return { status: 'error', error: sites.error, retry: () => void sites.refetch(), choose }
-  const list = sites.data
+  const list = usable ?? []
   if (list.length === 0) return { status: 'noSites', choose }
   const id = requested ?? only?.id
   if (id === undefined) return { status: 'choose', sites: list, choose }
@@ -113,7 +115,16 @@ export function SitePicker({ selected }: { selected: ReturnType<typeof useSelect
  * Lo que muestra una sección por sitio antes de tener un sitio: carga, error, organización sin sitios, elegir uno o
  * sitio no disponible. Con un sitio elegido, muestra `children`.
  */
-export function SiteGate({ selected, children }: { selected: ReturnType<typeof useSelectedSite>; children: (site: Site) => ReactNode }) {
+export function SiteGate({
+  selected,
+  noSites,
+  children,
+}: {
+  selected: ReturnType<typeof useSelectedSite>
+  /** Textos propios cuando la sección no tiene sitios disponibles (por ejemplo, por el alcance de su permiso). */
+  noSites?: { title: string; description: string }
+  children: (site: Site) => ReactNode
+}) {
   const { t } = useTranslation()
   const session = useSession()
   switch (selected.status) {
@@ -134,8 +145,9 @@ export function SiteGate({ selected, children }: { selected: ReturnType<typeof u
         <div className="rounded-2xl border border-dashed bg-card/50">
           <EmptyState
             icon={Building2}
-            title={t('sitePicker.noSites')}
+            title={noSites?.title ?? t('sitePicker.noSites')}
             action={
+              !noSites &&
               hasPermissionOnSite(session, 'sites.manage') && (
                 <Button asChild variant="outline">
                   <Link to="/sitios">{t('sitePicker.goToSites')}</Link>
@@ -143,7 +155,7 @@ export function SiteGate({ selected, children }: { selected: ReturnType<typeof u
               )
             }
           >
-            {t('sitePicker.noSitesDescription')}
+            {noSites?.description ?? t('sitePicker.noSitesDescription')}
           </EmptyState>
         </div>
       )

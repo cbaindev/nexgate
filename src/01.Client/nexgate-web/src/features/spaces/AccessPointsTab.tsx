@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { DoorClosed, Pencil, Plus, Trash2, Zap, ZapOff } from 'lucide-react'
+import { DoorClosed, FlaskConical, Pencil, Plus, Trash2, Zap, ZapOff } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/api/client'
@@ -14,7 +14,8 @@ import { FieldError, Input, Label, Select } from '@/components/ui/form'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-import { useSession } from '@/session/session'
+import { SimulationForm } from '@/features/access/SimulationForm'
+import { hasPermissionOnSite, useSession } from '@/session/session'
 import {
   type AccessPoint,
   accessPointIcons,
@@ -41,6 +42,9 @@ export function AccessPointsTab({ site, tree, points }: { site: Site; tree: Spac
   const [editing, setEditing] = useState<Editing>({ mode: 'create' })
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState<AccessPoint | null>(null)
+  // "Probar acceso" desde cada puerta, solo con permiso de leer accesos sobre el sitio entero (add-access-screens).
+  const [testing, setTesting] = useState<AccessPoint | null>(null)
+  const canTest = hasPermissionOnSite(session, 'access.read', site.id)
   const canCreate = tree.ordered().some((space) => canManageSpace(session, space))
   const sorted = [...points].sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }))
 
@@ -126,6 +130,17 @@ export function AccessPointsTab({ site, tree, points }: { site: Site; tree: Spac
                     <FailModeBadge mode={point.failMode} />
                   </TableCell>
                   <TableCell className="flex justify-end gap-1 px-4 py-1.5 md:table-cell md:py-3 md:text-right">
+                    {canTest && (
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={t('access.test.onPoint', { name: point.name })}
+                        title={t('access.test.title')}
+                        onClick={() => setTesting(point)}
+                      >
+                        <FlaskConical />
+                      </Button>
+                    )}
                     {manageable && (
                       <span className="inline-flex gap-1">
                         <Button
@@ -167,6 +182,14 @@ export function AccessPointsTab({ site, tree, points }: { site: Site; tree: Spac
             editing={editing}
             onDone={() => setOpen(false)}
           />
+        </SheetContent>
+      </Sheet>
+      <Sheet open={testing !== null} onOpenChange={(value) => !value && setTesting(null)}>
+        <SheetContent closeLabel={t('spaces.close')} aria-describedby={undefined}>
+          <SheetHeader>
+            <SheetTitle>{t('access.test.onPoint', { name: testing?.name ?? '' })}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-5">{testing && <SimulationForm key={testing.id} site={site} point={testing} />}</div>
         </SheetContent>
       </Sheet>
       <ConfirmDialog

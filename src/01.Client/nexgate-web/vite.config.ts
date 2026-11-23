@@ -62,5 +62,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     restoreMocks: true,
+    // Una zona lejos de la de los sitios: las pantallas deben usar la hora del sitio, no la del navegador.
+    env: { TZ: 'Asia/Tokyo' },
   },
 })

@@ -1,11 +1,29 @@
 import { http, HttpResponse } from 'msw'
 import type { components } from '@/api/schema'
+import { siteDayAndMinute } from '@/lib/zoned-time'
 
 type Site = components['schemas']['SiteDto']
 type Permission = components['schemas']['PermissionResponse']
 type Space = components['schemas']['SpaceDto']
 type AccessPoint = components['schemas']['AccessPointDto']
 type AccessPointBody = Omit<AccessPoint, 'id' | 'siteId'>
+type Subject = components['schemas']['SubjectDto']
+type Schedule = components['schemas']['ScheduleDto']
+type Credential = components['schemas']['CredentialDto']
+type Grant = components['schemas']['GrantDto']
+/** La API guarda solo un hash; la simulada guarda el valor para detectar duplicados y simular, y nunca lo devuelve. */
+type StoredCredential = Credential & { value: string }
+
+const publicCredential = (stored: StoredCredential): Credential => {
+  const credential: Partial<StoredCredential> = { ...stored }
+  delete credential.value
+  return credential as Credential
+}
+
+const minutes = (time: string) => {
+  const [h, m] = time.split(':').map(Number)
+  return h! * 60 + m!
+}
 
 export type Role = 'administrator' | 'guard' | 'resident'
 
@@ -53,6 +71,12 @@ export class FakeApi {
   accessPoints: AccessPoint[] = []
   /** Puertas que controla algún dispositivo: no se pueden eliminar. */
   deviceAccessPoints = new Set<string>()
+  subjects: Subject[] = []
+  schedules: Schedule[] = []
+  credentials: StoredCredential[] = []
+  grants: Grant[] = []
+  /** Cuerpos de las pruebas de acceso recibidas (para verificar qué envía la SPA). */
+  simulationBodies: unknown[] = []
   /** Si está, reemplaza los permisos del rol (para probar alcances por espacio). */
   permissionsOverride: Permission[] | null = null
 
@@ -338,7 +362,248 @@ export class FakeApi {
         this.accessPoints = this.accessPoints.filter((a) => a.id !== point.id)
         return new HttpResponse(null, { status: 204 })
       }),
+      ...this.accessHandlers(),
     ]
+  }
+
+  /** Sujetos, horarios, credenciales, permisos y prueba de acceso (cambio add-access-screens). */
+  private accessHandlers() {
+    const notFound = () => problem(404, 'No encontrado', 'not_found')
+    const invalid = (errors: Record<string, string[]>) => problem(400, 'Datos inválidos', 'validation', { errors })
+    const siteOf = (siteId: string) => this.sites.find((s) => s.id === siteId)!
+
+    return [
+      http.get('*/api/v1/sites/:siteId/subjects', ({ request, params }) => {
+        this.requests.push(`GET /sites/${params.siteId as string}/subjects`)
+        return (
+          this.guard(request, params.siteId as string) ??
+          HttpResponse.json(this.subjects.filter((s) => s.siteId === params.siteId).sort((a, b) => a.alias.localeCompare(b.alias)))
+        )
+      }),
+      http.post('*/api/v1/sites/:siteId/subjects', async ({ request, params }) => {
+        const denied = this.guard(request, params.siteId as string)
+        if (denied) return denied
+        const body = (await request.json()) as { kind: string; alias: string }
+        if (!body.alias?.trim()) return invalid({ Alias: ['El alias es obligatorio.'] })
+        return HttpResponse.json(this.addSubject(params.siteId as string, body.alias, body.kind), { status: 201 })
+      }),
+      http.put('*/api/v1/subjects/:id', async ({ request, params }) => {
+        const subject = this.subjects.find((s) => s.id === params.id)
+        const denied = this.guard(request, subject?.siteId)
+        if (denied || !subject) return denied ?? notFound()
+        const body = (await request.json()) as { kind: string; alias: string }
+        if (!body.alias?.trim()) return invalid({ Alias: ['El alias es obligatorio.'] })
+        Object.assign(subject, { kind: body.kind, alias: body.alias })
+        return HttpResponse.json(subject)
+      }),
+      http.delete('*/api/v1/subjects/:id', ({ request, params }) => {
+        const subject = this.subjects.find((s) => s.id === params.id)
+        const denied = this.guard(request, subject?.siteId)
+        if (denied || !subject) return denied ?? notFound()
+        if (this.credentials.some((c) => c.subjectId === subject.id) || this.grants.some((g) => g.subjectId === subject.id)) {
+          return problem(409, 'El sujeto tiene credenciales o permisos.', 'subject_in_use')
+        }
+        this.subjects = this.subjects.filter((s) => s.id !== subject.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+
+      http.get('*/api/v1/sites/:siteId/schedules', ({ request, params }) => {
+        return this.guard(request, params.siteId as string) ?? HttpResponse.json(this.schedules.filter((s) => s.siteId === params.siteId))
+      }),
+      http.post('*/api/v1/sites/:siteId/schedules', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) return denied
+        const body = (await request.json()) as { name: string; windows: Schedule['windows'] }
+        const error = this.invalidSchedule(siteId, body)
+        if (error) return error
+        return HttpResponse.json(this.addSchedule(siteId, body.name, body.windows), { status: 201 })
+      }),
+      http.put('*/api/v1/schedules/:id', async ({ request, params }) => {
+        const schedule = this.schedules.find((s) => s.id === params.id)
+        const denied = this.guard(request, schedule?.siteId)
+        if (denied || !schedule) return denied ?? notFound()
+        const body = (await request.json()) as { name: string; windows: Schedule['windows'] }
+        const error = this.invalidSchedule(schedule.siteId, body, schedule.id)
+        if (error) return error
+        Object.assign(schedule, { name: body.name, windows: body.windows })
+        return HttpResponse.json(schedule)
+      }),
+      http.delete('*/api/v1/schedules/:id', ({ request, params }) => {
+        const schedule = this.schedules.find((s) => s.id === params.id)
+        const denied = this.guard(request, schedule?.siteId)
+        if (denied || !schedule) return denied ?? notFound()
+        if (this.grants.some((g) => g.scheduleId === schedule.id)) {
+          return problem(409, 'Un permiso usa este horario.', 'schedule_in_use')
+        }
+        this.schedules = this.schedules.filter((s) => s.id !== schedule.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+
+      http.get('*/api/v1/sites/:siteId/credentials', ({ request, params }) => {
+        const denied = this.guard(request, params.siteId as string)
+        if (denied) return denied
+        const subjectId = new URL(request.url).searchParams.get('subjectId')
+        return HttpResponse.json(
+          this.credentials.filter((c) => c.siteId === params.siteId && (!subjectId || c.subjectId === subjectId)).map(publicCredential),
+        )
+      }),
+      http.post('*/api/v1/sites/:siteId/credentials', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) return denied
+        const body = (await request.json()) as { subjectId: string; type: string; value: string; validFrom: string | null; validUntil: string | null }
+        if (!body.value) return invalid({ Value: ['El valor es obligatorio.'] })
+        if (!this.subjects.some((s) => s.id === body.subjectId && s.siteId === siteId)) return invalid({ SubjectId: ['Sujeto inválido.'] })
+        if (this.credentials.some((c) => c.siteId === siteId && c.type === body.type && c.value === body.value)) {
+          return problem(409, 'Ya hay una credencial con ese valor en el sitio.', 'credential_taken')
+        }
+        const credential = this.addCredential(body.subjectId, body.type, body.value, body.validFrom, body.validUntil)
+        return HttpResponse.json(publicCredential(credential), { status: 201 })
+      }),
+      http.put('*/api/v1/credentials/:id', async ({ request, params }) => {
+        const credential = this.credentials.find((c) => c.id === params.id)
+        const denied = this.guard(request, credential?.siteId)
+        if (denied || !credential) return denied ?? notFound()
+        const body = (await request.json()) as { validFrom: string | null; validUntil: string | null }
+        if (body.validFrom && body.validUntil && body.validUntil <= body.validFrom) {
+          return invalid({ ValidUntil: ['La vigencia termina antes de empezar.'] })
+        }
+        Object.assign(credential, body)
+        return HttpResponse.json(publicCredential(credential))
+      }),
+      http.delete('*/api/v1/credentials/:id', ({ request, params }) => {
+        const credential = this.credentials.find((c) => c.id === params.id)
+        const denied = this.guard(request, credential?.siteId)
+        if (denied || !credential) return denied ?? notFound()
+        this.credentials = this.credentials.filter((c) => c.id !== credential.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+
+      http.get('*/api/v1/sites/:siteId/grants', ({ request, params }) => {
+        const denied = this.guard(request, params.siteId as string)
+        if (denied) return denied
+        const subjectId = new URL(request.url).searchParams.get('subjectId')
+        return HttpResponse.json(this.grants.filter((g) => g.siteId === params.siteId && (!subjectId || g.subjectId === subjectId)))
+      }),
+      http.post('*/api/v1/sites/:siteId/grants', async ({ request, params }) => {
+        const siteId = params.siteId as string
+        const denied = this.guard(request, siteId)
+        if (denied) return denied
+        const body = (await request.json()) as {
+          subjectId: string
+          targetType: string
+          targetId: string
+          scheduleId: string | null
+          validFrom: string | null
+          validUntil: string | null
+          effect: string
+          maxUses: number | null
+        }
+        if (body.effect === 'deny' && body.maxUses !== null) return invalid({ MaxUses: ['Una denegación no tiene usos.'] })
+        const grant: Grant = {
+          id: crypto.randomUUID(),
+          siteId,
+          subjectId: body.subjectId,
+          targetType: body.targetType,
+          targetId: body.targetId,
+          scheduleId: body.scheduleId,
+          validFrom: body.validFrom,
+          validUntil: body.validUntil,
+          effect: body.effect,
+          origin: 'manual',
+          remainingUses: body.maxUses,
+        }
+        this.grants.push(grant)
+        return HttpResponse.json(grant, { status: 201 })
+      }),
+      http.delete('*/api/v1/grants/:id', ({ request, params }) => {
+        const grant = this.grants.find((g) => g.id === params.id)
+        const denied = this.guard(request, grant?.siteId)
+        if (denied || !grant) return denied ?? notFound()
+        this.grants = this.grants.filter((g) => g.id !== grant.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+
+      http.post('*/api/v1/access-points/:id/simulations', async ({ request, params }) => {
+        const point = this.accessPoints.find((a) => a.id === params.id)
+        const denied = this.guard(request, point?.siteId)
+        if (denied || !point) return denied ?? notFound()
+        const body = (await request.json()) as { credentialType: string; credentialValue: string; at: string | null }
+        this.simulationBodies.push(body)
+        const at = body.at ?? new Date().toISOString()
+        const result = (decision: string, reason: string) => HttpResponse.json({ decision, reason, policyHash: 'hash-fake' })
+        const within = (from: string | null, until: string | null) => (!from || from <= at) && (!until || at < until)
+        const credential = this.credentials.find(
+          (c) => c.siteId === point.siteId && c.type === body.credentialType && c.value === body.credentialValue,
+        )
+        if (!credential || !within(credential.validFrom, credential.validUntil)) return result('deny', 'credential_invalid')
+
+        const { day, minute } = siteDayAndMinute(at, siteOf(point.siteId).timeZone)
+        const applying = this.grants.filter((g) => {
+          if (g.subjectId !== credential.subjectId || !within(g.validFrom, g.validUntil)) return false
+          const space = g.targetType === 'space' ? this.spaces.find((s) => s.id === g.targetId) : null
+          // Un permiso a un espacio cubre las puertas de su camino de acceso: las que dan a él o a uno de sus ancestros.
+          const covers = g.targetType === 'access_point' ? g.targetId === point.id : !!space && [...space.ancestorIds, space.id].includes(point.toSpaceId)
+          if (!covers) return false
+          const schedule = this.schedules.find((s) => s.id === g.scheduleId)
+          return !schedule || schedule.windows.some((w) => w.days.includes(day) && minutes(w.from) <= minute && minute < minutes(w.to))
+        })
+        if (applying.some((g) => g.effect === 'deny')) return result('deny', 'explicit_deny')
+        if (applying.some((g) => g.effect === 'allow' && (g.remainingUses === null || g.remainingUses > 0))) return result('allow', 'allowed')
+        return result('deny', 'no_permission')
+      }),
+    ]
+  }
+
+  private invalidSchedule(siteId: string, body: { name: string; windows: Schedule['windows'] }, except?: string) {
+    if (!body.name?.trim()) return problem(400, 'Datos inválidos', 'validation', { errors: { Name: ['El nombre es obligatorio.'] } })
+    if (!body.windows?.length || body.windows.some((w) => w.days.length === 0 || minutes(w.to) <= minutes(w.from))) {
+      return problem(400, 'Datos inválidos', 'validation', { errors: { Windows: ['Revisá las ventanas.'] } })
+    }
+    const wanted = body.name.trim().toLowerCase()
+    if (this.schedules.some((s) => s.siteId === siteId && s.id !== except && s.name.toLowerCase() === wanted)) {
+      return problem(409, 'Ya hay un horario con ese nombre en el sitio.', 'schedule_name_taken')
+    }
+    return null
+  }
+
+  addSubject(siteId: string, alias: string, kind = 'person'): Subject {
+    const subject: Subject = { id: crypto.randomUUID(), siteId, kind, alias }
+    this.subjects.push(subject)
+    return subject
+  }
+
+  addSchedule(siteId: string, name: string, windows: Schedule['windows']): Schedule {
+    const schedule: Schedule = { id: crypto.randomUUID(), siteId, name, windows }
+    this.schedules.push(schedule)
+    return schedule
+  }
+
+  addCredential(subjectId: string, type: string, value: string, validFrom: string | null = null, validUntil: string | null = null) {
+    const subject = this.subjects.find((s) => s.id === subjectId)!
+    const credential: StoredCredential = { id: crypto.randomUUID(), siteId: subject.siteId, subjectId, type, value, validFrom, validUntil }
+    this.credentials.push(credential)
+    return credential
+  }
+
+  addGrant(subject: Subject, target: { id: string }, options: Partial<Grant> = {}): Grant {
+    const grant: Grant = {
+      id: crypto.randomUUID(),
+      siteId: subject.siteId,
+      subjectId: subject.id,
+      targetType: this.accessPoints.some((a) => a.id === target.id) ? 'access_point' : 'space',
+      targetId: target.id,
+      scheduleId: null,
+      validFrom: null,
+      validUntil: null,
+      effect: 'allow',
+      origin: 'manual',
+      remainingUses: null,
+      ...options,
+    }
+    this.grants.push(grant)
+    return grant
   }
 
   /** 401 sin sesión y 404 si el sitio no es de la organización activa o no existe. */

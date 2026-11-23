@@ -239,6 +239,173 @@
       }
     }
   },
+  "access": {
+    "title": "Accesos",
+    "description": "Quién puede pasar por dónde y cuándo: personas, credenciales, permisos y horarios.",
+    "noSites": "No hay sitios disponibles para esta sección.",
+    "noSitesDescription": "Los accesos se ven por sitio entero. Cuando tengas acceso a un sitio completo, lo vas a poder elegir acá.",
+    "tabs": {
+      "subjects": "Personas",
+      "schedules": "Horarios",
+      "test": "Probar acceso"
+    },
+    "subjects": {
+      "listLabel": "Personas del sitio",
+      "filter": "Filtrar personas por alias",
+      "filterPlaceholder": "Buscar por alias…",
+      "noMatches": "Nadie coincide con la búsqueda.",
+      "pick": "Elegí una persona para ver sus credenciales y sus permisos.",
+      "empty": "Todavía no hay personas en este sitio.",
+      "emptyDescription": "Cada persona tiene sus credenciales (tarjeta, llavero o PIN) y sus permisos para pasar por los espacios y puertas del sitio.",
+      "create": "Nueva persona",
+      "createFirst": "Cargar la primera persona",
+      "createTitle": "Nueva persona",
+      "editTitle": "Editar persona",
+      "formDescription": "Alcanza con un alias para reconocerla dentro del sitio.",
+      "kind": "Tipo",
+      "kinds": {
+        "person": "Persona",
+        "anonymous": "Anónimo"
+      },
+      "alias": "Alias",
+      "aliasPlaceholder": "Por ejemplo, Titular 5B",
+      "aliasHint": "Un nombre para reconocerla, como “Titular 5B” o “Proveedor de limpieza”.",
+      "aliasRequired": "El alias es obligatorio.",
+      "noPersonalData": "No cargues documento, teléfono ni correo: Nexgate no guarda datos personales en los accesos.",
+      "deleteDescription": "Se elimina la persona. Solo se puede si no tiene credenciales ni permisos, y no se puede deshacer."
+    },
+    "validity": {
+      "label": "Vigencia",
+      "hint": "Opcional. Hora de {{timeZone}}.",
+      "from": "Desde",
+      "untilLabel": "Hasta",
+      "forever": "Sin vencimiento",
+      "between": "Del {{from}} al {{until}}",
+      "since": "Desde el {{from}}",
+      "until": "Hasta el {{until}}",
+      "valid": "Vigente",
+      "notYet": "Por empezar",
+      "expired": "Vencida",
+      "endBeforeStart": "Tiene que terminar después de empezar."
+    },
+    "credentials": {
+      "title": "Credenciales",
+      "listLabel": "Credenciales de {{name}}",
+      "empty": "No tiene credenciales.",
+      "create": "Agregar",
+      "createTitle": "Nueva credencial",
+      "editTitle": "Cambiar vigencia",
+      "editNamed": "Cambiar la vigencia de {{type}}",
+      "deleteNamed": "Eliminar {{type}}",
+      "deleteTitle": "¿Eliminar la credencial?",
+      "deleteDescription": "Deja de abrir cualquier puerta en cuanto los dispositivos reciban la política nueva. No se puede deshacer.",
+      "formDescription": "Para {{name}}.",
+      "type": "Tipo",
+      "types": {
+        "card": "Tarjeta",
+        "rf": "Llavero o tag",
+        "pin": "PIN"
+      },
+      "value": "Número",
+      "pin": "PIN",
+      "valueHint": "Se guarda cifrado y no se vuelve a mostrar.",
+      "valueRequired": "Escribí el valor de la credencial."
+    },
+    "grants": {
+      "title": "Permisos",
+      "listLabel": "Permisos de {{name}}",
+      "empty": "No tiene permisos.",
+      "create": "Agregar",
+      "createTitle": "Nuevo permiso",
+      "formDescription": "Para {{name}}. Un permiso no se edita: si cambia, se elimina y se crea otro.",
+      "effect": "Efecto",
+      "effects": {
+        "allow": "Permite",
+        "deny": "Deniega"
+      },
+      "effectOptions": {
+        "allow": "Permitir",
+        "deny": "Denegar"
+      },
+      "effectHints": {
+        "allow": "Puede pasar en el horario y la vigencia que elijas.",
+        "deny": "No puede pasar, aunque otro permiso lo habilite: la denegación gana siempre."
+      },
+      "denyWins": "Gana sobre cualquier permiso.",
+      "target": "A dónde",
+      "targetHint": "Un permiso a un espacio habilita todas las puertas del camino hasta él.",
+      "targetRequired": "Elegí un espacio o una puerta.",
+      "chooseTarget": "Elegí un espacio o una puerta",
+      "spaces": "Espacios",
+      "points": "Puertas",
+      "targetPoint": "{{name}} (da a {{to}})",
+      "schedule": "Horario",
+      "always": "Siempre",
+      "maxUses": "Máximo de usos",
+      "maxUsesHint": "Opcional. Vacío es sin límite.",
+      "usesInvalid": "Tiene que ser un número entero de 1 o más.",
+      "remainingUses_one": "Queda {{count}} uso",
+      "remainingUses_other": "Quedan {{count}} usos",
+      "origin": "Origen: {{origin}}",
+      "deleteNamed": "Eliminar el permiso a {{target}}",
+      "deleteTitle": "¿Eliminar el permiso?",
+      "deleteDescription": "Deja de aplicar en cuanto los dispositivos reciban la política nueva. No se puede deshacer."
+    },
+    "schedules": {
+      "listLabel": "Horarios de {{site}}",
+      "empty": "Todavía no hay horarios.",
+      "emptyDescription": "Un horario dice en qué días y horas vale un permiso, en la hora del sitio.",
+      "create": "Nuevo horario",
+      "createFirst": "Crear el primer horario",
+      "createTitle": "Nuevo horario",
+      "editTitle": "Editar horario",
+      "formDescription": "Días y horas en la hora de {{timeZone}}.",
+      "name": "Nombre",
+      "namePlaceholder": "Por ejemplo, Lunes a viernes de 8 a 17",
+      "nameRequired": "El nombre es obligatorio.",
+      "window": "Ventana {{number}}",
+      "removeWindow": "Quitar la ventana {{number}}",
+      "days": "Días",
+      "from": "Desde",
+      "to": "Hasta",
+      "endOfDay": "Hasta el final del día",
+      "addWindow": "Agregar ventana",
+      "noDays": "Elegí al menos un día.",
+      "endBeforeStart": "El fin tiene que ser después del inicio.",
+      "deleteDescription": "Se elimina el horario. Solo se puede si ningún permiso lo usa, y no se puede deshacer."
+    },
+    "test": {
+      "title": "Probar acceso",
+      "description": "¿Pasaría esta credencial por esta puerta?",
+      "formLabel": "Probar acceso",
+      "onPoint": "Probar acceso en {{name}}",
+      "fixedPoint": "Puerta:",
+      "point": "Puerta",
+      "choosePoint": "Elegí una puerta",
+      "pointRequired": "Elegí una puerta.",
+      "moment": "Momento",
+      "moments": {
+        "now": "Ahora",
+        "at": "Otra fecha y hora"
+      },
+      "at": "Fecha y hora",
+      "atRequired": "Elegí la fecha y la hora.",
+      "atHint": "Hora de {{timeZone}}.",
+      "submit": "Probar",
+      "again": "Probar otra",
+      "allowed": "Pasaría",
+      "denied": "No pasaría",
+      "reasons": {
+        "allowed": "Un permiso lo habilita en ese momento.",
+        "no_permission": "Ningún permiso vigente lo habilita a esa hora en esta puerta.",
+        "explicit_deny": "Una denegación gana sobre cualquier permiso.",
+        "credential_invalid": "La credencial no existe en el sitio, venció o todavía no empieza."
+      },
+      "contextNow": "En {{point}}, ahora.",
+      "contextAt": "En {{point}}, el {{at}}.",
+      "notAnEvent": "La prueba no abre la puerta, no queda registrada y no consume usos."
+    }
+  },
   "auth": {
     "headline": "Cada puerta, cada persona y cada horario, bajo control.",
     "features": {

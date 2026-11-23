@@ -30,6 +30,9 @@ SPA progresiva (PWA) de Nexgate (D-29): una sola aplicación web, instalable, co
 - **Secciones por sitio** (cambio `add-spaces-screens`):
   - `src/components/site-picker` tiene `useSelectedSite()`, `SitePicker` (el desplegable del encabezado) y `SiteGate` (carga, error, sin sitios, elegir uno o sitio no disponible).
   - El sitio elegido va en la dirección (`?sitio=`) y se elige solo cuando hay uno. Lo que se elige dentro del sitio también va en la dirección: en espacios, `?espacio=` y `?vista=puertas`.
+  - `useSelectedSite({ permission })` ofrece solo los sitios que ese permiso cubre entero. Accesos pasa `access.read`, porque un alcance de espacio no da acceso a esos datos y la API respondería 404.
+- **Hora del sitio** (`src/lib/zoned-time.ts`): las fechas y horas se cargan y se muestran en la zona horaria del sitio, no en la del navegador (`toSiteInstant`, `toSiteLocal` y `formatSiteDateTime`, solo con `Intl`). Las pruebas corren con `TZ=Asia/Tokyo` para que nada dependa de la zona del proceso.
+- **Valor de las credenciales**: se escribe una sola vez, vive solo en el estado del formulario y se descarta al guardar. Nunca va a la dirección, al navegador, a una clave de consulta ni a la consola. Lo mismo vale para el valor de la prueba de acceso.
 - **Permisos con alcance:**
   - `hasPermissionOnSite` y `hasPermissionOnSpace` en `session.ts` deciden qué acciones se muestran.
   - Un permiso con alcance de un espacio alcanza a ese espacio y a todo lo que tiene adentro; las puertas se manejan con permiso sobre el espacio al que dan.
